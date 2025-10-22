@@ -10,7 +10,7 @@ const apiKeyMiddleware = (req, res, next) => {
   }
 
   if (apiKey !== process.env.API_KEY) {
-    return res.status(403).json({ message: 'Invalid API key' });
+    return res.status(403).json({ message: `${apiKey} & ${process.env.API_KEY} is not a valid API key` });
   }
 
   next();
