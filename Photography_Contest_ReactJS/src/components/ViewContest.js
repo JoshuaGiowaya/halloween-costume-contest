@@ -129,7 +129,35 @@ const ViewContests = () => {
 
     const today = new Date();
 
+    
+    // Log each contest's dates
+    contests.forEach(contest => {
+        console.log(`Contest: ${contest.title}`);
+        console.log('Start date: ', new Date(contest.start_date));
+        console.log('End date: ', new Date(contest.end_date));
+        console.log('Today: ', today);
+        console.log('---');
+    });
+
+    contests.forEach(contest => {
+        console.log(`Contest: ${contest.title}`);
+        
+        // Brazil timezone (America/Sao_Paulo)
+        console.log('Brazil Timezone:');
+        console.log('Start date (Brazil): ', new Date(contest.start_date).toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+        console.log('End date (Brazil): ', new Date(contest.end_date).toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+        
+        // Colorado timezone (America/Denver)
+        console.log('Colorado Timezone:');
+        console.log('Start date (Colorado): ', new Date(contest.start_date).toLocaleString('en-US', { timeZone: 'America/Denver' }));
+        console.log('End date (Colorado): ', new Date(contest.end_date).toLocaleString('en-US', { timeZone: 'America/Denver' }));
+        
+        console.log('Today: ', today);
+        console.log('---');
+    });
+
     const ongoingContests = contests.filter(contest => new Date(contest.start_date) <= today && new Date(contest.end_date) >= today);
+    console.log('ongoingContests: ', ongoingContests);
     const pastContests = contests.filter(contest => new Date(contest.end_date) < today);
     const upcomingContests = contests.filter(contest => new Date(contest.start_date) > today);
 
@@ -249,12 +277,14 @@ const ViewContests = () => {
                         <Card.Text>{contest.description}</Card.Text>
                         <Card.Text>
                             <small className="text-muted">
-                                Start Date: {new Date(contest.start_date).toLocaleDateString()}
+                                Start Date: {new Date(contest.start_date).toLocaleString(undefined, { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone })}
+                                {Intl.DateTimeFormat().resolvedOptions().timeZone}
                             </small>
                         </Card.Text>
                         <Card.Text>
                             <small className="text-muted">
-                                End Date: {new Date(contest.end_date).toLocaleDateString()}
+                                End Date: {new Date(contest.end_date).toLocaleString(undefined, { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone })}
+                                {Intl.DateTimeFormat().resolvedOptions().timeZone}
                             </small>
                         </Card.Text>
                         {isPast ? (
