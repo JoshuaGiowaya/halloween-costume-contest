@@ -249,12 +249,12 @@ const ViewContests = () => {
                         <Card.Text>{contest.description}</Card.Text>
                         <Card.Text>
                             <small className="text-muted">
-                                Start Date: {new Date(contest.start_date).toLocaleString()}
+                                Start Date: {new Date(contest.start_date).toLocaleString(undefined, { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone })}
                             </small>
                         </Card.Text>
                         <Card.Text>
                             <small className="text-muted">
-                                End Date: {new Date(contest.end_date).toLocaleString()}
+                                End Date: {new Date(contest.end_date).toLocaleString(undefined, { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone })}
                             </small>
                         </Card.Text>
                         {isPast ? (
