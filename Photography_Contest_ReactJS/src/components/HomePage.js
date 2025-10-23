@@ -13,7 +13,7 @@ const HomePage = () => {
         } else if (user) {
             return `Welcome, ${user.username}!`;
         } else {
-            return 'Welcome, Photographer!';
+            return 'Please Register or Login to participate';
         }
     };
 
@@ -42,49 +42,22 @@ const HomePage = () => {
                 `}
             </style>
 
-            <h1 className='page-text'>Welcome to the Photography Contest Platform</h1>
+            <h1 className='page-text'>Welcome to the Yardstik Halloween costume contest</h1>
             <p className="lead">
                 <span className="welcome-text">{getWelcomeMessage()}</span>
             </p>
             <p className="lead page-text">
-                Join our contests, upload your best photos, and vote for your favorites!
+                Join our 2025 YardsTik Halloween costume contest!
             </p>
 
-            <Carousel>
-                <Carousel.Item>
-                    <img
-                        className="d-block w-100"
-                        src="https://picsum.photos/id/1015/800/400"
-                        alt="First slide"
-                    />
-                    <Carousel.Caption>
-                        <h3>Explore the Beauty of Nature</h3>
-                        <p>Capture stunning landscapes and wildlife.</p>
-                    </Carousel.Caption>
-                </Carousel.Item>
-                <Carousel.Item>
-                    <img
-                        className="d-block w-100"
-                        src="https://picsum.photos/id/1027/800/400"
-                        alt="Second slide"
-                    />
-                    <Carousel.Caption>
-                        <h3>Celebrate Portraits</h3>
-                        <p>Discover the art of capturing emotions and personalities.</p>
-                    </Carousel.Caption>
-                </Carousel.Item>
-                <Carousel.Item>
-                    <img
-                        className="d-block w-100"
-                        src="https://picsum.photos/id/1031/800/400"
-                        alt="Third slide"
-                    />
-                    <Carousel.Caption>
-                        <h3>Travel and Adventure</h3>
-                        <p>Share your journeys through captivating travel photography.</p>
-                    </Carousel.Caption>
-                </Carousel.Item>
-            </Carousel>
+        <div className="carousel slide">
+            <img
+                className="d-block w-100"
+                src="https://yardstik.com/wp-content/uploads/2024/09/a-1.svg"
+                alt="First slide"
+            />
+        </div>
+            
         </div>
     );
 };
