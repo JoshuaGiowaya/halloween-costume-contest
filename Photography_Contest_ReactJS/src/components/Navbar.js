@@ -30,7 +30,7 @@ const NavbarComponent = () => {
         <div>
             <Navbar expanded={expanded} expand="lg" bg="light" fixed="top">
                 <Container>
-                    <Navbar.Brand as={Link} to="/">Photography Contest</Navbar.Brand>
+                    <Navbar.Brand as={Link} to="/">Yardstik Halloween costume contest</Navbar.Brand>
                     <Navbar.Toggle aria-controls="responsive-navbar-nav" onClick={() => setExpanded(expanded ? false : "expanded")} />
                     <Navbar.Collapse id="responsive-navbar-nav">
                         <Nav className="ms-auto">

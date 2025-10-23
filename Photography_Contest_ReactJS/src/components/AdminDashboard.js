@@ -234,8 +234,8 @@ const AdminDashboard = () => {
                             <div className="card-body">
                                 <h5 className="card-title">{contest.title}</h5>
                                 <p className="card-text">{contest.description}</p>
-                                <p className="card-text"><small className="text-muted">Start: {new Date(contest.start_date).toLocaleString(undefined, { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone })}</small></p>
-                                <p className="card-text"><small className="text-muted">End: {new Date(contest.end_date).toLocaleString(undefined, { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone })}</small></p>
+                                <p className="card-text"><small className="text-muted">Start: {new Date(contest.start_date).toLocaleString()}</small></p>
+                                <p className="card-text"><small className="text-muted">End: {new Date(contest.end_date).toLocaleString()}</small></p>
                                 <Button variant="warning" onClick={() => handleEditContest(contest)}>Edit</Button>
                                 <Button variant="danger" onClick={() => openDeleteModal(contest)}>Delete</Button>
                                 <Button variant="info" onClick={() => handleViewContest(contest)}>View Photos</Button>
