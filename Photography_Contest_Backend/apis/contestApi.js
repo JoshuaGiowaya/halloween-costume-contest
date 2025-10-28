@@ -15,7 +15,8 @@ const createContest = async (req, res) => {
         title: req.body.title,
         description: req.body.description,
         start_date: req.body.start_date,
-        end_date: req.body.end_date
+        end_date: req.body.end_date,
+        manual_control: req.body.manual_control || false
     });
 
     try {
@@ -93,6 +94,44 @@ const deleteContestByTitle = async (req, res) => {
     }
 };
 
+// Start a contest (admin-only at route level)
+const startContestByTitle = async (req, res) => {
+    const { title } = req.params;
+    try {
+        const contest = await Contest.findOneAndUpdate(
+            { title },
+            { contest_status: 'active' },
+            { new: true }
+        );
+        if (!contest) {
+            return res.status(404).json({ message: 'Contest not found' });
+        }
+        return res.status(200).json({ message: 'Contest started', contest });
+    } catch (error) {
+        console.error('Start contest error:', error);
+        return res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// Stop a contest (admin-only at route level)
+const stopContestByTitle = async (req, res) => {
+    const { title } = req.params;
+    try {
+        const contest = await Contest.findOneAndUpdate(
+            { title },
+            { contest_status: 'ended' },
+            { new: true }
+        );
+        if (!contest) {
+            return res.status(404).json({ message: 'Contest not found' });
+        }
+        return res.status(200).json({ message: 'Contest stopped', contest });
+    } catch (error) {
+        console.error('Stop contest error:', error);
+        return res.status(500).json({ message: 'Server error' });
+    }
+};
+
 // Manually start voting for a contest (admin-only at route level)
 const startVotingByTitle = async (req, res) => {
     const { title } = req.params;
@@ -131,11 +170,27 @@ const stopVotingByTitle = async (req, res) => {
     }
 };
 
+// Get manual control mode status
+const getManualControlMode = async (req, res) => {
+    try {
+        const manualControlMode = process.env.MANUAL_CONTEST_CONTROL === 'true';
+        res.status(200).json({ 
+            manualControlMode,
+            message: manualControlMode ? 'Manual contest control enabled' : 'Automatic contest control enabled'
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
 module.exports = {
     createContest,
     getAllContests,
     updateContestByTitle,
     deleteContestByTitle,
+    startContestByTitle,
+    stopContestByTitle,
     startVotingByTitle,
-    stopVotingByTitle
+    stopVotingByTitle,
+    getManualControlMode
 };

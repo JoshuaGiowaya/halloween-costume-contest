@@ -61,6 +61,12 @@ const validateLogin = (req, res, next) => {
   }).catch(next);
 };
 
+// Admin login validation (always requires email and password)
+const validateAdminLogin = [
+  check('email', 'Please include a valid email').isEmail(),
+  check('password', 'Password is required').exists(),
+];
+
 const validateForgotPassword = [
   check('email', 'Please include a valid email').isEmail(),
 ];
@@ -90,12 +96,37 @@ const validateAdminUpdate = [
 ];
 
 // Contest Validators
-const validateContestCreate = [
-  check('title', 'Title is required').not().isEmpty(),
-  check('description', 'Description is required').not().isEmpty(),
-  check('start_date', 'Start date is required').not().isEmpty(),
-  check('end_date', 'End date is required').not().isEmpty(),
-];
+// Custom contest creation validation that handles manual control mode
+const validateContestCreate = (req, res, next) => {
+  const manualControlMode = process.env.MANUAL_CONTEST_CONTROL === 'true';
+  const isManualContest = req.body.manual_control === true;
+  
+  const validations = [
+    check('title', 'Title is required').not().isEmpty(),
+    check('description', 'Description is required').not().isEmpty(),
+  ];
+  
+  // Only require dates if not in manual control mode or if it's not a manual contest
+  if (!manualControlMode || !isManualContest) {
+    validations.push(
+      check('start_date', 'Start date is required').not().isEmpty(),
+      check('end_date', 'End date is required').not().isEmpty()
+    );
+  }
+  
+  // Run validations
+  const runValidations = validations.reduce((acc, validation) => {
+    return acc.then(() => validation.run(req));
+  }, Promise.resolve());
+  
+  runValidations.then(() => {
+    const errors = require('express-validator').validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  }).catch(next);
+};
 
 const validateContestUpdate = [
   check('title', 'Title is required').optional().not().isEmpty(),
@@ -153,6 +184,7 @@ const validateDeleteVotesByPhotoURL = [
 module.exports = {
   validateRegister,
   validateLogin,
+  validateAdminLogin,
   validateForgotPassword,
   validateResetPassword,
   validateUpdateProfile,

@@ -19,6 +19,8 @@ const AdminDashboard = () => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [contestToDelete, setContestToDelete] = useState(null);
     const [viewContest, setViewContest] = useState(null); // State for viewing contest photos
+    const [manualControlMode, setManualControlMode] = useState(false);
+    const [modeLoading, setModeLoading] = useState(true);
 
     const { admin } = useContext(AdminAuthContext); // Use admin context for authentication
     const navigate = useNavigate();
@@ -27,6 +29,28 @@ const AdminDashboard = () => {
         if (!admin) {
             navigate('/admin-login'); // Redirect to login if not admin
         }
+        
+        // Check manual control mode
+        const checkManualControlMode = async () => {
+            try {
+                const response = await axios.get(
+                    `${process.env.REACT_APP_API_URL}/api/contests/manual-control-mode`,
+                    {
+                        headers: {
+                            'x-api-key': process.env.REACT_APP_API_KEY,
+                        },
+                    }
+                );
+                setManualControlMode(response.data.manualControlMode);
+            } catch (error) {
+                console.error('Failed to check manual control mode:', error);
+                setManualControlMode(false);
+            } finally {
+                setModeLoading(false);
+            }
+        };
+        
+        checkManualControlMode();
         fetchContests();
     }, [admin, navigate]);
 
@@ -43,6 +67,32 @@ const AdminDashboard = () => {
             console.error('Error fetching contests:', error);
         }
     };
+
+  const handleStartContest = async (title) => {
+    try {
+      await axios.post(`${process.env.REACT_APP_API_URL}/api/contests/${encodeURIComponent(title)}/start`, {}, {
+        headers: { 'x-api-key': process.env.REACT_APP_API_KEY },
+        withCredentials: true,
+      });
+      await fetchContests();
+    } catch (error) {
+      console.error('Error starting contest:', error);
+      alert('Failed to start contest');
+    }
+  };
+
+  const handleStopContest = async (title) => {
+    try {
+      await axios.post(`${process.env.REACT_APP_API_URL}/api/contests/${encodeURIComponent(title)}/stop`, {}, {
+        headers: { 'x-api-key': process.env.REACT_APP_API_KEY },
+        withCredentials: true,
+      });
+      await fetchContests();
+    } catch (error) {
+      console.error('Error stopping contest:', error);
+      alert('Failed to stop contest');
+    }
+  };
 
   const handleStartVoting = async (title) => {
     try {
@@ -86,8 +136,24 @@ const AdminDashboard = () => {
         }
 
         try {
-            // If the contest title doesn't exist, proceed to create it
-            await axios.post(`${process.env.REACT_APP_API_URL}/api/contests/insert`, newContest, {
+            // Prepare contest data based on manual control mode
+            const contestData = {
+                title: newContest.title,
+                description: newContest.description,
+                ...(manualControlMode ? {
+                    // Manual control mode: no scheduled dates
+                    start_date: null,
+                    end_date: null,
+                    manual_control: true
+                } : {
+                    // Normal mode: use provided dates
+                    start_date: newContest.start_date,
+                    end_date: newContest.end_date,
+                    manual_control: false
+                })
+            };
+
+            await axios.post(`${process.env.REACT_APP_API_URL}/api/contests/insert`, contestData, {
                 headers: {
                     'x-api-key': process.env.REACT_APP_API_KEY,
                 },
@@ -96,7 +162,7 @@ const AdminDashboard = () => {
             setNewContest({ title: '', description: '', start_date: '', end_date: '' });
             fetchContests(); // Fetch contests again to update the list
             setShowCreateModal(false);
-            alert("Contest Added");
+            alert(manualControlMode ? "Manual Contest Created - Use force controls to start/stop" : "Contest Added");
         } catch (error) {
             console.error('Error creating contest:', error);
             alert("Error creating contest. Please try again.");
@@ -194,6 +260,18 @@ const AdminDashboard = () => {
         setShowDeleteModal(true);
     };
 
+    // Show loading spinner while checking manual control mode
+    if (modeLoading) {
+        return (
+            <div className="container mt-5 text-center">
+                <div className="spinner-border" role="status">
+                    <span className="sr-only">Loading...</span>
+                </div>
+                <p className="mt-2">Loading admin dashboard...</p>
+            </div>
+        );
+    }
+
     return (
         <div className="container">
             <style>{`
@@ -244,8 +322,37 @@ const AdminDashboard = () => {
                     background-color: #dc3545;
                     border-color: #dc3545;
                 }
+                
+                .contest-controls {
+                    border-top: 1px solid #dee2e6;
+                    padding-top: 10px;
+                    margin-top: 10px;
+                }
+                
+                .voting-controls {
+                    margin-bottom: 8px;
+                }
+                
+                .manual-controls {
+                    border-left: 3px solid #17a2b8;
+                    padding-left: 10px;
+                    background-color: #f8f9fa;
+                    border-radius: 4px;
+                }
             `}</style>
             <h2 className="text-center mt-4">Admin Dashboard</h2>
+            
+            {manualControlMode && (
+                <div className="alert alert-info mb-3">
+                    <strong>Manual Control Mode:</strong> You have enhanced control over contests:
+                    <ul className="mb-0 mt-2">
+                        <li><strong>Contest Creation:</strong> Create contests without scheduled dates (manual control only)</li>
+                        <li><strong>Voting Controls:</strong> Start/Stop voting for contests</li>
+                        <li><strong>Force Controls:</strong> Override scheduled dates to start/stop contests immediately</li>
+                        <li><strong>Flexible Management:</strong> Manage contests regardless of their scheduled times</li>
+                    </ul>
+                </div>
+            )}
 
             <h3 className="mt-4">Create Contest</h3>
             <Button variant="primary" onClick={() => setShowCreateModal(true)}>
@@ -260,17 +367,59 @@ const AdminDashboard = () => {
                             <div className="card-body">
                                 <h5 className="card-title">{contest.title}</h5>
                                 <p className="card-text">{contest.description}</p>
-                                <p className="card-text"><small className="text-muted">Start: {new Date(contest.start_date).toLocaleString()}</small></p>
-                                <p className="card-text"><small className="text-muted">End: {new Date(contest.end_date).toLocaleString()}</small></p>
-                                <p className="card-text"><small className="text-muted">Voting: {contest.voting_open ? 'Open' : 'Closed'}</small></p>
+                                {contest.manual_control ? (
+                                    <p className="card-text"><small className="text-muted">Type: Manual Control Contest</small></p>
+                                ) : (
+                                    <>
+                                        <p className="card-text"><small className="text-muted">Start: {new Date(contest.start_date).toLocaleString()}</small></p>
+                                        <p className="card-text"><small className="text-muted">End: {new Date(contest.end_date).toLocaleString()}</small></p>
+                                    </>
+                                )}
+                                <p className="card-text">
+                                    <small className="text-muted">
+                                        Contest: {contest.contest_status === 'active' ? 'Active' : contest.contest_status === 'ended' ? 'Ended' : 'Not Started'}
+                                    </small>
+                                </p>
+                                <p className="card-text">
+                                    <small className="text-muted">
+                                        Voting: {contest.voting_open ? 'Open' : 'Closed'}
+                                        {manualControlMode && <span className="ms-2 badge bg-info">Manual Control</span>}
+                                    </small>
+                                </p>
                                 <Button variant="warning" onClick={() => handleEditContest(contest)}>Edit</Button>
                                 <Button variant="danger" onClick={() => openDeleteModal(contest)}>Delete</Button>
                                 <Button variant="info" onClick={() => handleViewContest(contest)}>View Photos</Button>
-                                {contest.voting_open ? (
-                                  <Button className="ms-2" variant="secondary" onClick={() => handleStopVoting(contest.title)}>Stop Voting</Button>
-                                ) : (
-                                  <Button className="ms-2" variant="success" onClick={() => handleStartVoting(contest.title)}>Start Voting</Button>
-                                )}
+                                
+                                {/* Contest Controls */}
+                                <div className="contest-controls">
+                                    {/* Contest Status Controls */}
+                                    <div className="voting-controls">
+                                        <small className="text-muted d-block mb-2">Contest Controls:</small>
+                                        {contest.contest_status === 'active' ? (
+                                            <Button className="me-2" variant="danger" onClick={() => handleStopContest(contest.title)}>
+                                                Stop Contest
+                                            </Button>
+                                        ) : (
+                                            <Button className="me-2" variant="success" onClick={() => handleStartContest(contest.title)}>
+                                                Start Contest
+                                            </Button>
+                                        )}
+                                    </div>
+                                    
+                                    {/* Voting Controls */}
+                                    <div className="voting-controls">
+                                        <small className="text-muted d-block mb-2">Voting Controls:</small>
+                                        {contest.voting_open ? (
+                                            <Button className="me-2" variant="secondary" onClick={() => handleStopVoting(contest.title)}>
+                                                Stop Voting
+                                            </Button>
+                                        ) : (
+                                            <Button className="me-2" variant="info" onClick={() => handleStartVoting(contest.title)}>
+                                                Start Voting
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -305,28 +454,39 @@ const AdminDashboard = () => {
                                 required
                             ></textarea>
                         </div>
-                        <div className="form-group">
-                            <label>Start Date ({Intl.DateTimeFormat().resolvedOptions().timeZone}):</label>
-                            <input
-                                type="datetime-local"
-                                className="form-control"
-                                name="start_date"
-                                value={newContest.start_date}
-                                onChange={handleInputChange}
-                                required
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label>End Date ({Intl.DateTimeFormat().resolvedOptions().timeZone}):</label>
-                            <input
-                                type="datetime-local"
-                                className="form-control"
-                                name="end_date"
-                                value={newContest.end_date}
-                                onChange={handleInputChange}
-                                required
-                            />
-                        </div>
+                        {!manualControlMode && (
+                            <>
+                                <div className="form-group">
+                                    <label>Start Date ({Intl.DateTimeFormat().resolvedOptions().timeZone}):</label>
+                                    <input
+                                        type="datetime-local"
+                                        className="form-control"
+                                        name="start_date"
+                                        value={newContest.start_date}
+                                        onChange={handleInputChange}
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>End Date ({Intl.DateTimeFormat().resolvedOptions().timeZone}):</label>
+                                    <input
+                                        type="datetime-local"
+                                        className="form-control"
+                                        name="end_date"
+                                        value={newContest.end_date}
+                                        onChange={handleInputChange}
+                                        required
+                                    />
+                                </div>
+                            </>
+                        )}
+                        
+                        {manualControlMode && (
+                            <div className="alert alert-warning">
+                                <strong>Manual Control Mode:</strong> Contests will be created without scheduled dates. 
+                                You can start and stop them manually using the force controls.
+                            </div>
+                        )}
                         <Button variant="primary" type="submit">
                             Create Contest
                         </Button>
@@ -363,28 +523,39 @@ const AdminDashboard = () => {
                                     required
                                 ></textarea>
                             </div>
-                            <div className="form-group">
-                                <label>Start Date ({Intl.DateTimeFormat().resolvedOptions().timeZone}):</label>
-                                <input
-                                    type="datetime-local"
-                                    className="form-control"
-                                    name="start_date"
-                                    value={editContest.start_date}
-                                    onChange={handleEditInputChange}
-                                    required
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label>End Date ({Intl.DateTimeFormat().resolvedOptions().timeZone}):</label>
-                                <input
-                                    type="datetime-local"
-                                    className="form-control"
-                                    name="end_date"
-                                    value={editContest.end_date}
-                                    onChange={handleEditInputChange}
-                                    required
-                                />
-                            </div>
+                            {!editContest.manual_control && (
+                                <>
+                                    <div className="form-group">
+                                        <label>Start Date ({Intl.DateTimeFormat().resolvedOptions().timeZone}):</label>
+                                        <input
+                                            type="datetime-local"
+                                            className="form-control"
+                                            name="start_date"
+                                            value={editContest.start_date}
+                                            onChange={handleEditInputChange}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>End Date ({Intl.DateTimeFormat().resolvedOptions().timeZone}):</label>
+                                        <input
+                                            type="datetime-local"
+                                            className="form-control"
+                                            name="end_date"
+                                            value={editContest.end_date}
+                                            onChange={handleEditInputChange}
+                                            required
+                                        />
+                                    </div>
+                                </>
+                            )}
+                            
+                            {editContest.manual_control && (
+                                <div className="alert alert-info">
+                                    <strong>Manual Control Contest:</strong> This contest is controlled manually. 
+                                    Use the force controls to start and stop it.
+                                </div>
+                            )}
                             <Button variant="primary" type="submit">
                                 Update Contest
                             </Button>

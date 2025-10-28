@@ -5,8 +5,11 @@ const {
   getAllContests,
   updateContestByTitle,
   deleteContestByTitle,
+  startContestByTitle,
+  stopContestByTitle,
   startVotingByTitle,
-  stopVotingByTitle
+  stopVotingByTitle,
+  getManualControlMode
 } = require('../apis/contestApi');
 const {
   validateContestCreate,
@@ -20,9 +23,14 @@ router.use(apiKeyMiddleware);
 
 // Contest Routes
 router.get('/fetch', getAllContests);
+router.get('/manual-control-mode', getManualControlMode);
 router.post('/insert', validateContestCreate, createContest);
 router.put('/update', validateContestUpdate, updateContestByTitle);
 router.delete('/delete', deleteContestByTitle);
+// Admin-only contest controls
+router.post('/:title/start', protect, startContestByTitle);
+router.post('/:title/stop', protect, stopContestByTitle);
+
 // Admin-only voting controls
 router.post('/:title/voting/start', protect, startVotingByTitle);
 router.post('/:title/voting/stop', protect, stopVotingByTitle);

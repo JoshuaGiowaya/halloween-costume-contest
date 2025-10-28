@@ -156,10 +156,40 @@ const ViewContests = () => {
         console.log('---');
     });
 
-    const ongoingContests = contests.filter(contest => new Date(contest.start_date) <= today && new Date(contest.end_date) >= today);
+    // Filter contests based on contest status and voting status
+    const ongoingContests = contests.filter(contest => {
+        if (contest.manual_control) {
+            // Manual control contests are ongoing if contest is active
+            return contest.contest_status === 'active';
+        } else {
+            // Scheduled contests are ongoing if within date range
+            return new Date(contest.start_date) <= today && new Date(contest.end_date) >= today;
+        }
+    });
+    
+    const pastContests = contests.filter(contest => {
+        if (contest.manual_control) {
+            // Manual control contests are past if contest is ended
+            return contest.contest_status === 'ended';
+        } else {
+            // Scheduled contests are past if end date has passed
+            return new Date(contest.end_date) < today;
+        }
+    });
+    
+    const upcomingContests = contests.filter(contest => {
+        if (contest.manual_control) {
+            // Manual control contests are upcoming if not started
+            return contest.contest_status === 'not_started';
+        } else {
+            // Scheduled contests are upcoming if start date is in the future
+            return new Date(contest.start_date) > today;
+        }
+    });
+    
     console.log('ongoingContests: ', ongoingContests);
-    const pastContests = contests.filter(contest => new Date(contest.end_date) < today);
-    const upcomingContests = contests.filter(contest => new Date(contest.start_date) > today);
+    console.log('pastContests: ', pastContests);
+    console.log('upcomingContests: ', upcomingContests);
 
     const handleViewClick = (contestTitle, isPast) => {
         setSelectedContest(contestTitle);
@@ -277,23 +307,56 @@ const ViewContests = () => {
                         <Card.Text>{contest.description}</Card.Text>
                         <Card.Text>
                             <small className="text-muted">
-                                Start Date: {new Date(contest.start_date).toLocaleString(undefined, { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone })}
-                                {Intl.DateTimeFormat().resolvedOptions().timeZone}
+                                Contest: {contest.contest_status === 'active' ? 'Active' : contest.contest_status === 'ended' ? 'Ended' : 'Not Started'}
                             </small>
                         </Card.Text>
                         <Card.Text>
                             <small className="text-muted">
-                                End Date: {new Date(contest.end_date).toLocaleString(undefined, { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone })}
-                                {Intl.DateTimeFormat().resolvedOptions().timeZone}
+                                Voting: {contest.voting_open ? 'Open' : 'Closed'}
+                                {contest.manual_control && <span className="ms-2 badge bg-info">Manual Control</span>}
                             </small>
                         </Card.Text>
+                        {contest.manual_control ? (
+                            <Card.Text>
+                                <small className="text-muted">
+                                    Type: Manual Control Contest
+                                </small>
+                            </Card.Text>
+                        ) : (
+                            <>
+                                <Card.Text>
+                                    <small className="text-muted">
+                                        Start Date: {new Date(contest.start_date).toLocaleString(undefined, { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone })}
+                                        {Intl.DateTimeFormat().resolvedOptions().timeZone}
+                                    </small>
+                                </Card.Text>
+                                <Card.Text>
+                                    <small className="text-muted">
+                                        End Date: {new Date(contest.end_date).toLocaleString(undefined, { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone })}
+                                        {Intl.DateTimeFormat().resolvedOptions().timeZone}
+                                    </small>
+                                </Card.Text>
+                            </>
+                        )}
                         {isPast ? (
                             admin ? (
                                 <Button variant="info" className="me-2" onClick={() => handleViewClick(contest.title, true)}>View Winner</Button>
                             ) : null
+                        ) : contest.manual_control ? (
+                            // Manual control contests - show based on contest status
+                            contest.contest_status === 'active' ? (
+                                <>
+                                    <Button variant="primary" className="me-2" onClick={() => handleViewClick(contest.title, false)}>View</Button>
+                                    <Button variant="success" onClick={() => handleJoinClick(contest)}>Join</Button>
+                                </>
+                            ) : (
+                                <Button variant="secondary" disabled>Contest Not Started</Button>
+                            )
                         ) : new Date(contest.start_date) > today ? (
+                            // Scheduled contests - future
                             <Button variant="secondary" disabled>Wait</Button>
                         ) : (
+                            // Scheduled contests - ongoing
                             <>
                                 <Button variant="primary" className="me-2" onClick={() => handleViewClick(contest.title, false)}>View</Button>
                                 <Button variant="success" onClick={() => handleJoinClick(contest)}>Join</Button>
