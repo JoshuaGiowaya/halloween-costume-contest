@@ -306,7 +306,7 @@ const AdminDashboard = () => {
                             ></textarea>
                         </div>
                         <div className="form-group">
-                            <label>Start Date (IST):</label>
+                            <label>Start Date ({Intl.DateTimeFormat().resolvedOptions().timeZone}):</label>
                             <input
                                 type="datetime-local"
                                 className="form-control"
@@ -317,7 +317,7 @@ const AdminDashboard = () => {
                             />
                         </div>
                         <div className="form-group">
-                            <label>End Date (IST):</label>
+                            <label>End Date ({Intl.DateTimeFormat().resolvedOptions().timeZone}):</label>
                             <input
                                 type="datetime-local"
                                 className="form-control"
@@ -364,7 +364,7 @@ const AdminDashboard = () => {
                                 ></textarea>
                             </div>
                             <div className="form-group">
-                                <label>Start Date (IST):</label>
+                                <label>Start Date ({Intl.DateTimeFormat().resolvedOptions().timeZone}):</label>
                                 <input
                                     type="datetime-local"
                                     className="form-control"
@@ -375,7 +375,7 @@ const AdminDashboard = () => {
                                 />
                             </div>
                             <div className="form-group">
-                                <label>End Date (IST):</label>
+                                <label>End Date ({Intl.DateTimeFormat().resolvedOptions().timeZone}):</label>
                                 <input
                                     type="datetime-local"
                                     className="form-control"
