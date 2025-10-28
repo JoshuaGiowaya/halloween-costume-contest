@@ -9,7 +9,8 @@ const {
   stopContestByTitle,
   startVotingByTitle,
   stopVotingByTitle,
-  getManualControlMode
+  getManualControlMode,
+  getDisableJoinWhenVotingStarts
 } = require('../apis/contestApi');
 const {
   validateContestCreate,
@@ -24,6 +25,7 @@ router.use(apiKeyMiddleware);
 // Contest Routes
 router.get('/fetch', getAllContests);
 router.get('/manual-control-mode', getManualControlMode);
+router.get('/disable-join-when-voting-starts', getDisableJoinWhenVotingStarts);
 router.post('/insert', validateContestCreate, createContest);
 router.put('/update', validateContestUpdate, updateContestByTitle);
 router.delete('/delete', deleteContestByTitle);

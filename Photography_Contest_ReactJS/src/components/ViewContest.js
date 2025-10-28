@@ -79,28 +79,43 @@ const ViewContests = () => {
     const [userPhotos, setUserPhotos] = useState([]);
     const [viewingPastContest, setViewingPastContest] = useState(false);
     const [loading, setLoading] = useState(true); // Add loading state
+    const [disableJoinWhenVotingStarts, setDisableJoinWhenVotingStarts] = useState(false);
 
     // New state for file upload
     const [file, setFile] = useState(null);
     const [fileError, setFileError] = useState('');
 
     useEffect(() => {
-        // Fetch the contest data
-        axios.get(`${process.env.REACT_APP_API_URL}/api/contests/fetch`, {
-            headers: {
-                'x-api-key': process.env.REACT_APP_API_KEY,
-            },
-            withCredentials: true,
-        })
-            .then(response => {
-                if (response.status === 200) {
-                    setContests(response.data);
+        // Fetch the contest data and disable join setting
+        Promise.all([
+            axios.get(`${process.env.REACT_APP_API_URL}/api/contests/fetch`, {
+                headers: {
+                    'x-api-key': process.env.REACT_APP_API_KEY,
+                },
+                withCredentials: true,
+            }),
+            axios.get(`${process.env.REACT_APP_API_URL}/api/contests/disable-join-when-voting-starts`, {
+                headers: {
+                    'x-api-key': process.env.REACT_APP_API_KEY,
+                },
+                withCredentials: true,
+            })
+        ])
+            .then(([contestsResponse, disableJoinResponse]) => {
+                if (contestsResponse.status === 200) {
+                    setContests(contestsResponse.data);
                 } else {
-                    console.error('Error fetching contests: ', response.status);
+                    console.error('Error fetching contests: ', contestsResponse.status);
+                }
+                
+                if (disableJoinResponse.status === 200) {
+                    setDisableJoinWhenVotingStarts(disableJoinResponse.data.disableJoinWhenVotingStarts);
+                } else {
+                    console.error('Error fetching disable join setting: ', disableJoinResponse.status);
                 }
             })
             .catch(error => {
-                console.error('There was an error fetching the contests!', error);
+                console.error('There was an error fetching data!', error);
             })
             .finally(() => setLoading(false)); // Stop loading spinner
 
@@ -347,7 +362,11 @@ const ViewContests = () => {
                             contest.contest_status === 'active' ? (
                                 <>
                                     <Button variant="primary" className="me-2" onClick={() => handleViewClick(contest.title, false)}>View</Button>
-                                    <Button variant="success" onClick={() => handleJoinClick(contest)}>Join</Button>
+                                    {contest.voting_open && disableJoinWhenVotingStarts ? (
+                                        <Button variant="secondary" disabled>Submissions Closed - Voting Started</Button>
+                                    ) : (
+                                        <Button variant="success" onClick={() => handleJoinClick(contest)}>Join</Button>
+                                    )}
                                 </>
                             ) : (
                                 <Button variant="secondary" disabled>Contest Not Started</Button>
@@ -359,7 +378,11 @@ const ViewContests = () => {
                             // Scheduled contests - ongoing
                             <>
                                 <Button variant="primary" className="me-2" onClick={() => handleViewClick(contest.title, false)}>View</Button>
-                                <Button variant="success" onClick={() => handleJoinClick(contest)}>Join</Button>
+                                {contest.voting_open && disableJoinWhenVotingStarts ? (
+                                    <Button variant="secondary" disabled>Submissions Closed - Voting Started</Button>
+                                ) : (
+                                    <Button variant="success" onClick={() => handleJoinClick(contest)}>Join</Button>
+                                )}
                             </>
                         )}
                     </Card.Body>

@@ -183,6 +183,19 @@ const getManualControlMode = async (req, res) => {
     }
 };
 
+// Get disable join when voting starts setting
+const getDisableJoinWhenVotingStarts = async (req, res) => {
+    try {
+        const disableJoinWhenVotingStarts = process.env.DISABLE_JOIN_WHEN_VOTING_STARTS === 'true';
+        res.status(200).json({ 
+            disableJoinWhenVotingStarts,
+            message: disableJoinWhenVotingStarts ? 'Join disabled when voting starts' : 'Join allowed during voting'
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
 module.exports = {
     createContest,
     getAllContests,
@@ -192,5 +205,6 @@ module.exports = {
     stopContestByTitle,
     startVotingByTitle,
     stopVotingByTitle,
-    getManualControlMode
+    getManualControlMode,
+    getDisableJoinWhenVotingStarts
 };

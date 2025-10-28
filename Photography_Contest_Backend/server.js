@@ -17,6 +17,9 @@ const app = express();
 // Set NODE_ENV to development if not specified
 process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 
+// Set default for disable join when voting starts
+process.env.DISABLE_JOIN_WHEN_VOTING_STARTS = process.env.DISABLE_JOIN_WHEN_VOTING_STARTS || 'false';
+
 // CORS configuration
 const corsOptions = {
     origin: process.env.FRONTEND_URL || ['http://localhost:3000', 'http://127.0.0.1:3000'], // Default to localhost:3000 for development
