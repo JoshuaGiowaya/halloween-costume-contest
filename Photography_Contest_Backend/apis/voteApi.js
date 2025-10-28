@@ -1,5 +1,6 @@
 const { validationResult } = require('express-validator');
 const Vote = require('../models/Vote');
+const Contest = require('../models/Contest');
 
 // Create a new vote
 const createVote = async (req, res) => {
@@ -11,6 +12,15 @@ const createVote = async (req, res) => {
     const { photo_url, email, contest_title } = req.body;
 
     try {
+        // Ensure voting is open for the contest
+        const contest = await Contest.findOne({ title: contest_title });
+        if (!contest) {
+            return res.status(404).json({ error: 'Contest not found.' });
+        }
+        if (!contest.voting_open) {
+            return res.status(400).json({ error: 'Voting is currently closed for this contest.' });
+        }
+
         const existingVote = await Vote.findOne({ email, contest_title });
         if (existingVote) {
             return res.status(400).json({ error: "You have already voted in this contest using this email." });

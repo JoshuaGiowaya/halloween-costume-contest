@@ -9,6 +9,8 @@ const ContestPhotos = ({ contestTitle, onBack }) => {
     const [votedPhoto, setVotedPhoto] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [contestInfo, setContestInfo] = useState(null);
+    const [votingOpen, setVotingOpen] = useState(false);
 
     const { user } = useContext(UserAuthContext);
     const { admin } = useContext(AdminAuthContext);
@@ -18,6 +20,18 @@ const ContestPhotos = ({ contestTitle, onBack }) => {
     useEffect(() => {
         const fetchPhotosAndVotes = async () => {
             try {
+                // Fetch contest details to determine voting state
+                const contestsResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/contests/fetch`, {
+                    headers: {
+                        'x-api-key': process.env.REACT_APP_API_KEY,
+                    },
+                    withCredentials: true,
+                });
+
+                const contest = contestsResponse.data.find(c => c.title === contestTitle);
+                setContestInfo(contest);
+                setVotingOpen(Boolean(contest?.voting_open));
+
                 // Fetch photos related to the contest
                 const photosResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/photos/fetch`, {
                     headers: {
@@ -77,6 +91,9 @@ const ContestPhotos = ({ contestTitle, onBack }) => {
             console.log('Vote submitted successfully', response.data);
         } catch (error) {
             console.error('There was an error submitting the vote!', error);
+            if (error.response && error.response.data && error.response.data.error) {
+                alert(error.response.data.error);
+            }
         }
     };
 
@@ -96,9 +113,9 @@ const ContestPhotos = ({ contestTitle, onBack }) => {
                                 <Button
                                     variant={votedPhoto === photo.photo_url ? "success" : "primary"}
                                     onClick={() => handleVote(photo.photo_url)}
-                                    disabled={!!votedPhoto} // Disable button if a vote is already given
+                                    disabled={!!votedPhoto || !votingOpen} // Disable if already voted or voting closed
                                 >
-                                    {votedPhoto === photo.photo_url ? "Voted" : "Vote"}
+                                    {votedPhoto === photo.photo_url ? "Voted" : (votingOpen ? "Vote" : "Voting Closed")}
                                 </Button>
                             </Card.Body>
                         </Card>

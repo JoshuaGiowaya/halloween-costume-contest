@@ -44,6 +44,32 @@ const AdminDashboard = () => {
         }
     };
 
+  const handleStartVoting = async (title) => {
+    try {
+      await axios.post(`${process.env.REACT_APP_API_URL}/api/contests/${encodeURIComponent(title)}/voting/start`, {}, {
+        headers: { 'x-api-key': process.env.REACT_APP_API_KEY },
+        withCredentials: true,
+      });
+      await fetchContests();
+    } catch (error) {
+      console.error('Error starting voting:', error);
+      alert('Failed to start voting');
+    }
+  };
+
+  const handleStopVoting = async (title) => {
+    try {
+      await axios.post(`${process.env.REACT_APP_API_URL}/api/contests/${encodeURIComponent(title)}/voting/stop`, {}, {
+        headers: { 'x-api-key': process.env.REACT_APP_API_KEY },
+        withCredentials: true,
+      });
+      await fetchContests();
+    } catch (error) {
+      console.error('Error stopping voting:', error);
+      alert('Failed to stop voting');
+    }
+  };
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setNewContest({ ...newContest, [name]: value });
@@ -236,9 +262,15 @@ const AdminDashboard = () => {
                                 <p className="card-text">{contest.description}</p>
                                 <p className="card-text"><small className="text-muted">Start: {new Date(contest.start_date).toLocaleString()}</small></p>
                                 <p className="card-text"><small className="text-muted">End: {new Date(contest.end_date).toLocaleString()}</small></p>
+                                <p className="card-text"><small className="text-muted">Voting: {contest.voting_open ? 'Open' : 'Closed'}</small></p>
                                 <Button variant="warning" onClick={() => handleEditContest(contest)}>Edit</Button>
                                 <Button variant="danger" onClick={() => openDeleteModal(contest)}>Delete</Button>
                                 <Button variant="info" onClick={() => handleViewContest(contest)}>View Photos</Button>
+                                {contest.voting_open ? (
+                                  <Button className="ms-2" variant="secondary" onClick={() => handleStopVoting(contest.title)}>Stop Voting</Button>
+                                ) : (
+                                  <Button className="ms-2" variant="success" onClick={() => handleStartVoting(contest.title)}>Start Voting</Button>
+                                )}
                             </div>
                         </div>
                     </div>

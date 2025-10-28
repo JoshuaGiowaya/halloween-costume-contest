@@ -1,5 +1,6 @@
 const { validationResult } = require('express-validator');
 const Contest = require('../models/Contest');
+const { protect } = require('../middleware/authMiddleware');
 
 // Create a new contest
 const createContest = async (req, res) => {
@@ -92,9 +93,49 @@ const deleteContestByTitle = async (req, res) => {
     }
 };
 
+// Manually start voting for a contest (admin-only at route level)
+const startVotingByTitle = async (req, res) => {
+    const { title } = req.params;
+    try {
+        const contest = await Contest.findOneAndUpdate(
+            { title },
+            { voting_open: true, votingOpenedAt: new Date() },
+            { new: true }
+        );
+        if (!contest) {
+            return res.status(404).json({ message: 'Contest not found' });
+        }
+        return res.status(200).json({ message: 'Voting started', contest });
+    } catch (error) {
+        console.error('Start voting error:', error);
+        return res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// Manually stop voting for a contest (admin-only at route level)
+const stopVotingByTitle = async (req, res) => {
+    const { title } = req.params;
+    try {
+        const contest = await Contest.findOneAndUpdate(
+            { title },
+            { voting_open: false },
+            { new: true }
+        );
+        if (!contest) {
+            return res.status(404).json({ message: 'Contest not found' });
+        }
+        return res.status(200).json({ message: 'Voting stopped', contest });
+    } catch (error) {
+        console.error('Stop voting error:', error);
+        return res.status(500).json({ message: 'Server error' });
+    }
+};
+
 module.exports = {
     createContest,
     getAllContests,
     updateContestByTitle,
-    deleteContestByTitle
+    deleteContestByTitle,
+    startVotingByTitle,
+    stopVotingByTitle
 };
