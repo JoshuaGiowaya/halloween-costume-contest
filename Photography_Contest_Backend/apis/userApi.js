@@ -19,29 +19,54 @@ const registerUser = async (req, res) => {
   }
 
   const { username, email, password } = req.body;
+  const usernameOnlyMode = process.env.USERNAME_ONLY === 'true';
   console.log('username', username);
   console.log('email', email);
   console.log('password', password);
+  console.log('usernameOnlyMode', usernameOnlyMode);
 
   try {
-    const userExists = await User.findOne({ email });
+    // Check if user exists based on mode
+    let userExists;
+    if (usernameOnlyMode) {
+      userExists = await User.findOne({ username });
+    } else {
+      userExists = await User.findOne({ email });
+    }
 
     if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    const user = await User.create({
+    // Use fixed password if environment variable is set, otherwise use provided password
+    const userPassword = process.env.FIXED_USER_PASSWORD || password;
+    console.log('Using password:', process.env.FIXED_USER_PASSWORD ? 'Fixed password from env' : 'Provided password');
+
+    // Create user object based on mode
+    const userData = {
       username,
-      email,
-      password,
-    });
+      password: userPassword,
+    };
+    
+    // Only include email if not in username-only mode
+    if (!usernameOnlyMode) {
+      userData.email = email;
+    }
+
+    const user = await User.create(userData);
 
     if (user) {
-      res.status(200).json({
+      const responseData = {
         _id: user._id,
         username: user.username,
-        email: user.email,
-      });
+      };
+      
+      // Only include email in response if not in username-only mode
+      if (!usernameOnlyMode) {
+        responseData.email = user.email;
+      }
+      
+      res.status(200).json(responseData);
     } else {
       res.status(400).json({ message: 'Invalid user data' });
     }
@@ -57,12 +82,22 @@ const authUser = async (req, res) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const { email, password } = req.body;
+  const { username, email, password } = req.body;
+  const usernameOnlyMode = process.env.USERNAME_ONLY === 'true';
+  console.log('username', username);
   console.log('email', email);
   console.log('password', password);
+  console.log('usernameOnlyMode', usernameOnlyMode);
 
   try {
-    const user = await User.findOne({ email });
+    // Find user based on mode
+    let user;
+    if (usernameOnlyMode) {
+      user = await User.findOne({ username });
+    } else {
+      user = await User.findOne({ email });
+    }
+    
     console.log('user', user);
     console.log('user.matchPassword(password)', user && (await user.matchPassword(password)));
 
@@ -82,14 +117,21 @@ const authUser = async (req, res) => {
         sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
       });
 
-      res.json({
+      const responseData = {
         _id: user._id,
         username: user.username,
-        email: user.email,
         token,
-      });
+      };
+      
+      // Only include email in response if not in username-only mode
+      if (!usernameOnlyMode) {
+        responseData.email = user.email;
+      }
+
+      res.json(responseData);
     } else {
-      res.status(401).json({ message: 'Invalid email or password' });
+      const errorMessage = usernameOnlyMode ? 'Invalid username or password' : 'Invalid email or password';
+      res.status(401).json({ message: errorMessage });
     }
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -304,6 +346,30 @@ const validateToken = async (req, res) => {
   }
 };
 
+const getRegistrationMode = async (req, res) => {
+  try {
+    const fixedPasswordMode = !!process.env.FIXED_USER_PASSWORD;
+    res.status(200).json({ 
+      fixedPasswordMode,
+      message: fixedPasswordMode ? 'Fixed password mode enabled' : 'Normal password mode enabled'
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const getUsernameOnlyMode = async (req, res) => {
+  try {
+    const usernameOnlyMode = process.env.USERNAME_ONLY === 'true';
+    res.status(200).json({ 
+      usernameOnlyMode,
+      message: usernameOnlyMode ? 'Username-only mode enabled' : 'Username+email mode enabled'
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 module.exports = {
   registerUser,
   authUser,
@@ -312,5 +378,7 @@ module.exports = {
   updateUserProfile,
   forgotPassword,
   resetPassword,
-  validateToken
+  validateToken,
+  getRegistrationMode,
+  getUsernameOnlyMode
 };

@@ -1,16 +1,65 @@
 const { check } = require('express-validator');
 
 // User Validators
-const validateRegister = [
-  check('username', 'Username is required').not().isEmpty(),
-  check('email', 'Please include a valid email').isEmail(),
-  check('password', 'Password must be at least 6 characters').isLength({ min: 6 }),
-];
+const validateRegister = (req, res, next) => {
+  const fixedPasswordMode = !!process.env.FIXED_USER_PASSWORD;
+  const usernameOnlyMode = process.env.USERNAME_ONLY === 'true';
+  
+  const validations = [
+    check('username', 'Username is required').not().isEmpty(),
+  ];
+  
+  // Only add email validation if not in username-only mode
+  if (!usernameOnlyMode) {
+    validations.push(check('email', 'Please include a valid email').isEmail());
+  }
+  
+  // Only add password validation if not in fixed password mode
+  if (!fixedPasswordMode) {
+    validations.push(check('password', 'Password must be at least 6 characters').isLength({ min: 6 }));
+  }
+  
+  // Run validations
+  const runValidations = validations.reduce((acc, validation) => {
+    return acc.then(() => validation.run(req));
+  }, Promise.resolve());
+  
+  runValidations.then(() => {
+    const errors = require('express-validator').validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  }).catch(next);
+};
 
-const validateLogin = [
-  check('email', 'Please include a valid email').isEmail(),
-  check('password', 'Password is required').exists(),
-];
+const validateLogin = (req, res, next) => {
+  const usernameOnlyMode = process.env.USERNAME_ONLY === 'true';
+  
+  const validations = [
+    check('password', 'Password is required').exists(),
+  ];
+  
+  // Use username or email based on mode
+  if (usernameOnlyMode) {
+    validations.push(check('username', 'Username is required').not().isEmpty());
+  } else {
+    validations.push(check('email', 'Please include a valid email').isEmail());
+  }
+  
+  // Run validations
+  const runValidations = validations.reduce((acc, validation) => {
+    return acc.then(() => validation.run(req));
+  }, Promise.resolve());
+  
+  runValidations.then(() => {
+    const errors = require('express-validator').validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  }).catch(next);
+};
 
 const validateForgotPassword = [
   check('email', 'Please include a valid email').isEmail(),

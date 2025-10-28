@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Modal, Button, Spinner } from 'react-bootstrap';
@@ -6,6 +6,7 @@ import { UserAuthContext } from '../context/UserAuthContext';
 
 const UserLogin = () => {
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [otp, setOtp] = useState(new Array(6).fill(''));
   const [newPassword, setNewPassword] = useState('');
@@ -15,16 +16,51 @@ const UserLogin = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalStep, setModalStep] = useState('forgotPassword'); // forgotPassword, resetPassword
   const [loading, setLoading] = useState(false);
+  const [usernameOnlyMode, setUsernameOnlyMode] = useState(false);
+  const [modeLoading, setModeLoading] = useState(true);
   const { login } = useContext(UserAuthContext); // Use UserAuthContext here
   const navigate = useNavigate();
+
+  // Check username-only mode on component mount
+  useEffect(() => {
+    const checkUsernameOnlyMode = async () => {
+      try {
+        const response = await axios.get(
+          `${process.env.REACT_APP_API_URL}/api/users/username-only-mode`,
+          {
+            headers: {
+              'x-api-key': process.env.REACT_APP_API_KEY,
+            },
+          }
+        );
+        setUsernameOnlyMode(response.data.usernameOnlyMode);
+      } catch (error) {
+        console.error('Failed to check username-only mode:', error);
+        // Default to normal mode if check fails
+        setUsernameOnlyMode(false);
+      } finally {
+        setModeLoading(false);
+      }
+    };
+
+    checkUsernameOnlyMode();
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
+      // Prepare login data based on mode
+      const loginData = { password };
+      if (usernameOnlyMode) {
+        loginData.username = username;
+      } else {
+        loginData.email = email;
+      }
+
       const { data } = await axios.post(
         `${process.env.REACT_APP_API_URL}/api/users/login`,
-        { email, password },
+        loginData,
         {
           headers: {
             'x-api-key': process.env.REACT_APP_API_KEY,
@@ -142,22 +178,52 @@ const UserLogin = () => {
     setError(null);
   };
 
+  // Show loading spinner while checking username-only mode
+  if (modeLoading) {
+    return (
+      <div className="container mt-5 text-center">
+        <Spinner animation="border" role="status">
+          <span className="sr-only">Loading...</span>
+        </Spinner>
+        <p className="text-light mt-2">Loading login form...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="container mt-5">
       <h2 className="text-center" style={{ color: '#007bff' }}>Login</h2>
       {message && <div className="alert alert-success text-center">{message}</div>}
       {error && <div className="alert alert-danger text-center">{error}</div>}
+      {usernameOnlyMode && (
+        <div className="alert alert-info text-center">
+          <strong>Note:</strong> Please use your username to login.
+        </div>
+      )}
       <form onSubmit={handleLogin} className="mx-auto shadow p-4 rounded bg-light" style={{ maxWidth: '400px', border: '2px solid #007bff' }}>
         <div className="form-group">
-          <label style={{ fontWeight: 'bold', color: '#007bff' }}>Email:</label>
-          <input
-            type="email"
-            className="form-control"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={{ borderColor: '#007bff', borderWidth: '2px' }}
-          />
+          <label style={{ fontWeight: 'bold', color: '#007bff' }}>
+            {usernameOnlyMode ? 'Username:' : 'Email:'}
+          </label>
+          {usernameOnlyMode ? (
+            <input
+              type="text"
+              className="form-control"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              style={{ borderColor: '#007bff', borderWidth: '2px' }}
+            />
+          ) : (
+            <input
+              type="email"
+              className="form-control"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              style={{ borderColor: '#007bff', borderWidth: '2px' }}
+            />
+          )}
         </div>
         <br />
         <div className="form-group">
