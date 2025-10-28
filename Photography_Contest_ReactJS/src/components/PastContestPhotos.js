@@ -89,7 +89,7 @@ const PastContestPhotos = ({ contestTitle, onBack }) => {
                 </div>
             ) : (
                 <>
-                    {winner && (
+                    {admin && winner && (
                         <div className="my-4">
                             <h2>Winner: {winner.uploaded_by}</h2>
                             <img src={winner.photo_url} alt="Winner" className="img-fluid" />

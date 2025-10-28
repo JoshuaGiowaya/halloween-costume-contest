@@ -288,7 +288,9 @@ const ViewContests = () => {
                             </small>
                         </Card.Text>
                         {isPast ? (
-                            <Button variant="info" className="me-2" onClick={() => handleViewClick(contest.title, true)}>View Winner</Button>
+                            admin ? (
+                                <Button variant="info" className="me-2" onClick={() => handleViewClick(contest.title, true)}>View Winner</Button>
+                            ) : null
                         ) : new Date(contest.start_date) > today ? (
                             <Button variant="secondary" disabled>Wait</Button>
                         ) : (
