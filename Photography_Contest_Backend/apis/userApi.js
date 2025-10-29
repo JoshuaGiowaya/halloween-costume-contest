@@ -26,13 +26,12 @@ const registerUser = async (req, res) => {
   console.log('usernameOnlyMode', usernameOnlyMode);
 
   try {
-    // Check if user exists based on mode
-    let userExists;
-    if (usernameOnlyMode) {
-      userExists = await User.findOne({ username });
-    } else {
-      userExists = await User.findOne({ email });
-    }
+    // Generate email address in format {username}@gmail.com
+    const generatedEmail = `${username}@gmail.com`;
+    console.log('Generated email:', generatedEmail);
+
+    // Check if user exists by username (since we always generate email from username)
+    const userExists = await User.findOne({ username });
 
     if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
@@ -46,12 +45,8 @@ const registerUser = async (req, res) => {
     const userData = {
       username,
       password: userPassword,
+      email: generatedEmail, // Always include the generated email
     };
-    
-    // Only include email if not in username-only mode
-    if (!usernameOnlyMode) {
-      userData.email = email;
-    }
 
     const user = await User.create(userData);
 
@@ -59,12 +54,8 @@ const registerUser = async (req, res) => {
       const responseData = {
         _id: user._id,
         username: user.username,
+        email: user.email, // Always include the generated email
       };
-      
-      // Only include email in response if not in username-only mode
-      if (!usernameOnlyMode) {
-        responseData.email = user.email;
-      }
       
       res.status(200).json(responseData);
     } else {
@@ -90,13 +81,12 @@ const authUser = async (req, res) => {
   console.log('usernameOnlyMode', usernameOnlyMode);
 
   try {
-    // Find user based on mode
-    let user;
-    if (usernameOnlyMode) {
-      user = await User.findOne({ username });
-    } else {
-      user = await User.findOne({ email });
-    }
+    // Generate email address in format {username}@gmail.com for login
+    const generatedEmail = `${username}@gmail.com`;
+    console.log('Generated email for login:', generatedEmail);
+    
+    // Find user by username (since we always generate email from username)
+    const user = await User.findOne({ username });
     
     console.log('user', user);
     console.log('user.matchPassword(password)', user && (await user.matchPassword(password)));
@@ -120,18 +110,13 @@ const authUser = async (req, res) => {
       const responseData = {
         _id: user._id,
         username: user.username,
+        email: user.email, // Always include the generated email
         token,
       };
-      
-      // Only include email in response if not in username-only mode
-      if (!usernameOnlyMode) {
-        responseData.email = user.email;
-      }
 
       res.json(responseData);
     } else {
-      const errorMessage = usernameOnlyMode ? 'Invalid username or password' : 'Invalid email or password';
-      res.status(401).json({ message: errorMessage });
+      res.status(401).json({ message: 'Invalid username or password' });
     }
   } catch (error) {
     res.status(500).json({ message: 'Server error' });

@@ -75,8 +75,12 @@ const RegisterPage = () => {
         registrationData.email = email;
       }
       
-      // Only include password if not in fixed password mode
-      if (!fixedPasswordMode) {
+      // Include password based on mode
+      if (fixedPasswordMode) {
+        // Send the fixed password from environment
+        registrationData.password = process.env.REACT_APP_FIXED_USER_PASSWORD;
+      } else {
+        // Send the user-provided password
         registrationData.password = password;
       }
 
