@@ -134,7 +134,8 @@ const RegisterPage = () => {
       )}
       {usernameOnlyMode && (
         <div className="alert alert-info text-center">
-          <strong>Note:</strong> You only need to provide a username for registration.
+          <strong>Note:</strong> You only need to provide a username for registration. <br></br>Please do not use spaces in your username. You can use underscores or hyphens instead. 
+          <br></br>If you want your username to explain your costume you can format it as play-on-words, or play_on_words.
         </div>
       )}
       <form onSubmit={submitHandler} className="mx-auto shadow p-4 rounded bg-light" style={{ maxWidth: '400px', border: '2px solid #007bff' }}>
