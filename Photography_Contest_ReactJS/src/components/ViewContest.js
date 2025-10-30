@@ -239,14 +239,14 @@ const ViewContests = () => {
         const selectedFile = e.target.files[0];
         if (selectedFile) {
             const fileSize = selectedFile.size / 1024 / 1024; // in MB
-            const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/heic', 'image/heif'];
 
             // Validate file size and type
-            if (fileSize > 5) {
-                setFileError('File size exceeds 5 MB limit.');
+            if (fileSize > 75) {
+                setFileError('File size exceeds 75 MB limit.');
                 setFile(null);
             } else if (!allowedTypes.includes(selectedFile.type)) {
-                setFileError('Only JPG, JPEG, and PNG file types are allowed.');
+                setFileError('Only JPG, JPEG, PNG, HEIC, and HEIF file types are allowed.');
                 setFile(null);
             } else {
                 setFile(selectedFile);
@@ -456,7 +456,7 @@ const ViewContests = () => {
                         </Form.Group>
                         <Form.Group controlId="formPhotoFile" className="mt-3">
                             <Form.Label>Upload Photo</Form.Label>
-                            <Form.Control type="file" accept=".jpg, .jpeg, .png" onChange={handleFileChange} />
+                            <Form.Control type="file" accept=".jpg, .jpeg, .png, .heic, .heif" onChange={handleFileChange} />
                             {fileError && <Form.Text className="text-danger">{fileError}</Form.Text>}
                         </Form.Group>
                         <Button variant="primary" type="submit" className="mt-3">
