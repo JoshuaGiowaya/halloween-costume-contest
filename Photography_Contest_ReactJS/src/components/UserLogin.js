@@ -240,6 +240,7 @@ const UserLogin = () => {
         <button type="submit" className="btn btn-primary d-block mx-auto mt-4" style={{ backgroundColor: '#007bff', borderColor: '#007bff', fontWeight: 'bold' }}>
           {loading ? <Spinner animation="border" size="sm" /> : 'Login'}
         </button>
+<<<<<<< Updated upstream
         <p className="text-center mt-3">
           <button
             type="button"
@@ -250,6 +251,8 @@ const UserLogin = () => {
             Forgot Password?
           </button> 
         </p>
+=======
+>>>>>>> Stashed changes
       </form>
 
       <Modal show={showModal} onHide={closeModal}>
