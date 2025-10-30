@@ -248,7 +248,7 @@ const UserLogin = () => {
             style={{ color: '#007bff', fontWeight: 'bold' }}
           >
             Forgot Password?
-          </button>
+          </button> 
         </p>
       </form>
 
@@ -265,20 +265,11 @@ const UserLogin = () => {
           {modalStep === 'forgotPassword' && (
             <form onSubmit={handleForgotPassword}>
               <div className="form-group">
-                <label style={{ fontWeight: 'bold', color: '#007bff' }}>Email:</label>
-                <input
-                  type="email"
-                  className="form-control"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  style={{ borderColor: '#007bff', borderWidth: '2px' }}
-                />
+               <strong>Password: </strong><strong>yardstik-halloween-2025</strong>
+               <br />
+               <br />
+               <strong>Stil Need help? <a href="https://docs.google.com/document/d/1FCoiD5cuKQNHtSxMSuhVY2fZSNi6zWZsqsmC0RniP5Q/edit?tab=t.0#heading=h.ub4fqn7itppp">Instructions Doc</a></strong>
               </div>
-              <br />
-              <button type="submit" className="btn btn-primary d-block mx-auto mt-4" style={{ backgroundColor: '#007bff', borderColor: '#007bff', fontWeight: 'bold' }}>
-                {loading ? <Spinner animation="border" size="sm" /> : 'Send OTP'}
-              </button>
             </form>
           )}
 
