@@ -11,7 +11,7 @@ This guide will walk you through registering, logging in, and voting in the phot
 **Important**: This app is configured with simplified authentication:
 - **Username Only**: You only need a username (no email required)
 - **Fixed Password**: A password is automatically generated for all users
-- **Password**: `yardstik-halloween-2025`
+- **Password**: `yardstik-halloween-2026`
 
 ---
 
@@ -24,7 +24,7 @@ This guide will walk you through registering, logging in, and voting in the phot
 
 ### Step 2: Fill Out the Registration Form
 1. **Username**: Enter your desired username (this will be your login identifier)
-   - Choose something memorable (e.g., "john_photographer", "sarah_2024")
+   - Choose something memorable (e.g., "john_photographer", "sarah_2026")
    - Username must be unique
 2. **Note**: You will see a message stating "A password will be automatically generated for your account"
 3. **Note**: You will see a message stating "You only need to provide a username for registration"
@@ -32,7 +32,7 @@ This guide will walk you through registering, logging in, and voting in the phot
 ### Step 3: Complete Registration
 1. Click the **"Register"** button
 2. You will be automatically redirected to the login page
-3. Your account is now created with the fixed password: `yardstik-halloween-2025`
+3. Your account is now created with the fixed password: `yardstik-halloween-2026`
 
 ---
 
@@ -44,7 +44,7 @@ This guide will walk you through registering, logging in, and voting in the phot
 
 ### Step 2: Enter Your Credentials
 1. **Username**: Enter the username you used during registration
-2. **Password**: Enter `yardstik-halloween-2025` (this is the same for all users)
+2. **Password**: Enter `yardstik-halloween-2026` (this is the same for all users)
 3. **Note**: You will see a message stating "Please use your username to login"
 
 ### Step 3: Access the Contest
@@ -108,7 +108,7 @@ This guide will walk you through registering, logging in, and voting in the phot
 
 ### Can't Login?
 - **Wrong Username**: Double-check your username spelling
-- **Wrong Password**: Make sure you're using `yardstik-halloween-2025`
+- **Wrong Password**: Make sure you're using `yardstik-halloween-2026`
 - **Account Not Found**: Make sure you registered first
 
 ### Can't Vote?

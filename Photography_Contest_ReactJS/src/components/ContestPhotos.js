@@ -101,16 +101,17 @@ const ContestPhotos = ({ contestTitle, onBack }) => {
     if (error) return <div>Error loading photos: {error.message}</div>;
 
     return (
-        <Container>
-            <Button variant="secondary" onClick={onBack}>Back to Contests</Button>
+        <Container fluid className="px-0">
+            <Button variant="secondary" className="sticky-back" onClick={onBack}>Back to Contests</Button>
             <Row>
                 {photos.map(photo => (
-                    <Col md={4} key={photo._id} className="mb-4">
+                    <Col xs={12} sm={6} lg={4} key={photo._id} className="mb-4">
                         <Card>
-                            <Card.Img variant="top" src={photo.photo_url} />
+                            <Card.Img variant="top" className="photo-thumb" src={photo.photo_url} alt={`Costume submitted by ${photo.uploaded_by}`} />
                             <Card.Body>
-                                <Card.Text>Uploaded by: {photo.uploaded_by}</Card.Text>
+                                <Card.Text className="wrap-anywhere">Uploaded by: {photo.uploaded_by}</Card.Text>
                                 <Button
+                                    className="w-100"
                                     variant={votedPhoto === photo.photo_url ? "success" : "primary"}
                                     onClick={() => handleVote(photo.photo_url)}
                                     disabled={!!votedPhoto || !votingOpen} // Disable if already voted or voting closed

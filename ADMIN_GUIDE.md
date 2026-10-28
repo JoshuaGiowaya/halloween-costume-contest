@@ -11,13 +11,13 @@ This guide explains how to configure and manage the photography contest when bot
 ### Current Settings
 ```bash
 # Backend .env file
-FIXED_USER_PASSWORD=yardstik-halloween-2025
+FIXED_USER_PASSWORD=yardstik-halloween-2026
 USERNAME_ONLY=true
 ```
 
 ### What This Means
 - **Username-Only Authentication**: Users only need a username (no email required)
-- **Fixed Password**: All users share the same password: `yardstik-halloween-2025`
+- **Fixed Password**: All users share the same password: `yardstik-halloween-2026`
 - **Simplified Registration**: Users only provide a username
 - **Simplified Login**: Users login with username + fixed password
 
@@ -29,7 +29,7 @@ USERNAME_ONLY=true
 1. **Configure Environment Variables**
    ```bash
    # In Photography_Contest_Backend/.env
-   FIXED_USER_PASSWORD=yardstik-halloween-2025
+   FIXED_USER_PASSWORD=yardstik-halloween-2026
    USERNAME_ONLY=true
    ```
 
@@ -47,7 +47,7 @@ USERNAME_ONLY=true
 
 4. **Test Authentication**
    - Register a test user with just a username
-   - Login with username + `yardstik-halloween-2025`
+   - Login with username + `yardstik-halloween-2026`
    - Verify the system works correctly
 
 ### 2. Contest Launch (Thursday Morning)
@@ -81,7 +81,7 @@ USERNAME_ONLY=true
 
 ### Login Process
 1. User enters username
-2. User enters password: `yardstik-halloween-2025`
+2. User enters password: `yardstik-halloween-2026`
 3. Sees message: "Please use your username to login"
 4. Clicks "Login" → Access granted to contest
 
@@ -149,13 +149,13 @@ USERNAME_ONLY=true
 
 ### Key Messages to Share
 1. **Registration**: "Just choose a username - no email needed!"
-2. **Login**: "Use your username and password: yardstik-halloween-2025"
+2. **Login**: "Use your username and password: yardstik-halloween-2026"
 3. **Voting**: "Voting opens Thursday morning - mark your calendar!"
 4. **Process**: "Register → Login → Browse → Vote!"
 
 ### Common User Questions
 - **Q**: "Do I need an email?" **A**: "No, just a username!"
-- **Q**: "What's the password?" **A**: "yardstik-halloween-2025 (same for everyone)"
+- **Q**: "What's the password?" **A**: "yardstik-halloween-2026 (same for everyone)"
 - **Q**: "When can I vote?" **A**: "Thursday morning onwards"
 - **Q**: "How do I vote?" **A**: "Click on your favorite photo!"
 

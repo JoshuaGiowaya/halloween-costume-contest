@@ -114,18 +114,18 @@ const RegisterPage = () => {
   // Show loading spinner while checking registration mode
   if (modeLoading) {
     return (
-      <div className="container mt-5 text-center">
+      <div className="mt-4 text-center">
         <Spinner animation="border" role="status">
           <span className="sr-only">Loading...</span>
         </Spinner>
-        <p className="text-light mt-2">Loading registration form...</p>
+        <p className="mt-2">Loading registration form...</p>
       </div>
     );
   }
 
   return (
-    <div className="container mt-5">
-      <h2 className="text-center text-light" style={{ color: '#007bff' }}>Register</h2>
+    <div className="mt-4">
+      <h2 className="text-center" style={{ color: '#007bff' }}>Register</h2>
       {error && <div className="alert alert-danger text-center">{error}</div>}
       {fixedPasswordMode && (
         <div className="alert alert-info text-center">
@@ -138,63 +138,66 @@ const RegisterPage = () => {
           <br></br>If you want your username to explain your costume you can format it as play-on-words, or play_on_words.
         </div>
       )}
-      <form onSubmit={submitHandler} className="mx-auto shadow p-4 rounded bg-light" style={{ maxWidth: '400px', border: '2px solid #007bff' }}>
+      <form onSubmit={submitHandler} className="form-card shadow bg-light">
         <div className="form-group">
-          <label style={{ fontWeight: 'bold', color: '#007bff' }}>Username:</label>
+          <label htmlFor="register-username">Username:</label>
           <input
+            id="register-username"
             type="text"
             className="form-control"
+            autoComplete="username"
+            autoCapitalize="none"
+            autoCorrect="off"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            style={{ borderColor: '#007bff', borderWidth: '2px' }}
             required
           />
         </div>
-        <br></br>
         {!usernameOnlyMode && (
-          <>
-            <div className="form-group">
-              <label style={{ fontWeight: 'bold', color: '#007bff' }}>Email:</label>
-              <input
-                type="email"
-                className="form-control"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                style={{ borderColor: '#007bff', borderWidth: '2px' }}
-                required
-              />
-            </div>
-            <br></br>
-          </>
+          <div className="form-group mt-3">
+            <label htmlFor="register-email">Email:</label>
+            <input
+              id="register-email"
+              type="email"
+              className="form-control"
+              autoComplete="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
         )}
         {!fixedPasswordMode && (
           <>
-            <div className="form-group">
-              <label style={{ fontWeight: 'bold', color: '#007bff' }}>Password:</label>
+            <div className="form-group mt-3">
+              <label htmlFor="register-password">Password:</label>
               <input
+                id="register-password"
                 type="password"
                 className="form-control"
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                style={{ borderColor: '#007bff', borderWidth: '2px' }}
                 required
               />
             </div>
-            <br></br>
-            <div className="form-group">
-              <label style={{ fontWeight: 'bold', color: '#007bff' }}>Confirm Password:</label>
+            <div className="form-group mt-3">
+              <label htmlFor="register-confirm-password">Confirm Password:</label>
               <input
+                id="register-confirm-password"
                 type="password"
                 className="form-control"
+                autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                style={{ borderColor: '#007bff', borderWidth: '2px' }}
                 required
               />
             </div>
           </>
         )}
-        <button type="submit" className="btn btn-primary d-block mx-auto mt-4" style={{ backgroundColor: '#007bff', borderColor: '#007bff', fontWeight: 'bold' }}>
+        <button type="submit" className="btn btn-primary mt-4" style={{ fontWeight: 'bold' }}>
           {loading ? <Spinner animation="border" size="sm" /> : 'Register'}
         </button>
       </form>

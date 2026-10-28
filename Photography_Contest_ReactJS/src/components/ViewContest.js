@@ -183,7 +183,7 @@ const ViewContests = () => {
             return new Date(contest.start_date) <= today && new Date(contest.end_date) >= today;
         }
     });
-    
+
     const pastContests = contests.filter(contest => {
         if (contest.manual_control) {
             // Manual control contests are past if contest is ended
@@ -329,11 +329,11 @@ const ViewContests = () => {
 
     const renderContests = (contests, isPast) => (
         contests.map((contest, index) => (
-            <Col md={4} key={index} className="mb-4">
+            <Col xs={12} sm={6} lg={4} key={index} className="mb-4">
                 <Card>
                     <Card.Body>
-                        <Card.Title>{contest.title}</Card.Title>
-                        <Card.Text>{contest.description}</Card.Text>
+                        <Card.Title className="wrap-anywhere">{contest.title}</Card.Title>
+                        <Card.Text className="wrap-anywhere">{contest.description}</Card.Text>
                         <Card.Text>
                             <small className="text-muted">
                                 Contest: {contest.contest_status === 'active' ? 'Active' : contest.contest_status === 'ended' ? 'Ended' : 'Not Started'}
@@ -367,38 +367,40 @@ const ViewContests = () => {
                                 </Card.Text>
                             </>
                         )}
-                        {isPast ? (
-                            admin ? (
-                                <Button variant="info" className="me-2" onClick={() => handleViewClick(contest.title, true)}>View Winner</Button>
-                            ) : null
-                        ) : contest.manual_control ? (
-                            // Manual control contests - show based on contest status
-                            contest.contest_status === 'active' ? (
+                        <div className="action-row">
+                            {isPast ? (
+                                admin ? (
+                                    <Button variant="info" onClick={() => handleViewClick(contest.title, true)}>View Winner</Button>
+                                ) : null
+                            ) : contest.manual_control ? (
+                                // Manual control contests - show based on contest status
+                                contest.contest_status === 'active' ? (
+                                    <>
+                                        <Button variant="primary" onClick={() => handleViewClick(contest.title, false)}>View</Button>
+                                        {contest.voting_open && disableJoinWhenVotingStarts ? (
+                                            <Button variant="secondary" disabled>Submissions Closed - Voting Started</Button>
+                                        ) : (
+                                            <Button variant="success" onClick={() => handleJoinClick(contest)}>Join</Button>
+                                        )}
+                                    </>
+                                ) : (
+                                    <Button variant="secondary" disabled>Contest Not Started</Button>
+                                )
+                            ) : new Date(contest.start_date) > today ? (
+                                // Scheduled contests - future
+                                <Button variant="secondary" disabled>Wait</Button>
+                            ) : (
+                                // Scheduled contests - ongoing
                                 <>
-                                    <Button variant="primary" className="me-2" onClick={() => handleViewClick(contest.title, false)}>View</Button>
+                                    <Button variant="primary" onClick={() => handleViewClick(contest.title, false)}>View</Button>
                                     {contest.voting_open && disableJoinWhenVotingStarts ? (
                                         <Button variant="secondary" disabled>Submissions Closed - Voting Started</Button>
                                     ) : (
                                         <Button variant="success" onClick={() => handleJoinClick(contest)}>Join</Button>
                                     )}
                                 </>
-                            ) : (
-                                <Button variant="secondary" disabled>Contest Not Started</Button>
-                            )
-                        ) : new Date(contest.start_date) > today ? (
-                            // Scheduled contests - future
-                            <Button variant="secondary" disabled>Wait</Button>
-                        ) : (
-                            // Scheduled contests - ongoing
-                            <>
-                                <Button variant="primary" className="me-2" onClick={() => handleViewClick(contest.title, false)}>View</Button>
-                                {contest.voting_open && disableJoinWhenVotingStarts ? (
-                                    <Button variant="secondary" disabled>Submissions Closed - Voting Started</Button>
-                                ) : (
-                                    <Button variant="success" onClick={() => handleJoinClick(contest)}>Join</Button>
-                                )}
-                            </>
-                        )}
+                            )}
+                        </div>
                     </Card.Body>
                 </Card>
             </Col>
@@ -408,17 +410,7 @@ const ViewContests = () => {
     if (loading) return <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}><Spinner animation="border" role="status"><span className="sr-only"></span></Spinner></div>;
 
     return (
-        <Container>
-            <style>
-                {`
-                @import url('https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&display=swap');
-
-                body, .navbar, .navbar-brand, .nav-link, .btn, .card-title, .card-text, .text-muted {
-                    font-family: 'Raleway', sans-serif;
-                }
-                `}
-            </style>
-
+        <Container fluid className="px-0">
             {selectedContest ? (
                 viewingPastContest ? (
                     <PastContestPhotos contestTitle={selectedContest} onBack={handleBack} />
@@ -427,17 +419,25 @@ const ViewContests = () => {
                 )
             ) : (
                 <>
-                    <Row className="my-4">
-                        <Col className="text-center">
-                            <ToggleButtonGroup type="radio" name="options" value={filter} onChange={setFilter}>
+                    <Row className="mb-4">
+                        <Col className="d-flex justify-content-center">
+                            {/* .filter-toggle stacks these full width on a phone and lays
+                                them out as a normal button group from 576px up. */}
+                            <ToggleButtonGroup
+                                className="filter-toggle"
+                                type="radio"
+                                name="options"
+                                value={filter}
+                                onChange={setFilter}
+                            >
                                 <ToggleButton id="ongoing-contests" type="radio" variant="outline-primary" value="ongoing">
-                                    Ongoing Contests
+                                    Ongoing
                                 </ToggleButton>
                                 <ToggleButton id="past-contests" type="radio" variant="outline-secondary" value="past">
-                                    Past Contests
+                                    Past
                                 </ToggleButton>
                                 <ToggleButton id="upcoming-contests" type="radio" variant="outline-success" value="upcoming">
-                                    Upcoming Contests
+                                    Upcoming
                                 </ToggleButton>
                             </ToggleButtonGroup>
                         </Col>
@@ -450,7 +450,8 @@ const ViewContests = () => {
                 </>
             )}
 
-            <Modal show={showModal} onHide={() => setShowModal(false)}>
+            {/* Edge-to-edge on a phone, a centred dialog from 576px up. */}
+            <Modal show={showModal} onHide={() => setShowModal(false)} fullscreen="sm-down" centered>
                 <Modal.Header closeButton>
                     <Modal.Title>Join Contest</Modal.Title>
                 </Modal.Header>
@@ -484,7 +485,7 @@ const ViewContests = () => {
                             </Form.Text>
                             {fileError && <Form.Text className="text-danger d-block">{fileError}</Form.Text>}
                         </Form.Group>
-                        <Button variant="primary" type="submit" className="mt-3" disabled={preparing || !file}>
+                        <Button variant="primary" type="submit" className="mt-4 w-100" disabled={preparing || !file}>
                             {preparing ? 'Preparing photo…' : 'Submit'}
                         </Button>
                     </Form>
