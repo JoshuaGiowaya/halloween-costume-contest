@@ -136,8 +136,11 @@ const validateContestCreate = (req, res, next) => {
 const validateContestUpdate = [
   check('title', 'Title is required').optional().not().isEmpty(),
   check('description', 'Description is required').optional().not().isEmpty(),
-  check('start_date', 'Start date is required').optional().not().isEmpty(),
-  check('end_date', 'End date is required').optional().not().isEmpty(),
+  // Manual-control contests have no schedule, so they legitimately carry null
+  // dates. Plain .optional() only skips undefined, so null has to be allowed
+  // explicitly or editing a manual contest fails validation.
+  check('start_date', 'Start date is required').optional({ values: 'null' }).not().isEmpty(),
+  check('end_date', 'End date is required').optional({ values: 'null' }).not().isEmpty(),
 ];
 
 // Photo Validators
