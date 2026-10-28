@@ -5,11 +5,9 @@ import Nav from "react-bootstrap/Nav";
 import Container from "react-bootstrap/Container";
 import { UserAuthContext } from '../context/UserAuthContext';
 import { AdminAuthContext } from '../context/AdminAuthContext';
-import useContestModes from '../hooks/useContestModes';
 
 const NavbarComponent = () => {
     const navigate = useNavigate();
-    const { allowlistMode } = useContestModes();
 
     const { isAuth: isUserAuth, user, logout: userLogout } = useContext(UserAuthContext);
     const { isAdminAuth, admin, logout: adminLogout } = useContext(AdminAuthContext);
@@ -67,11 +65,11 @@ const NavbarComponent = () => {
                             </>
                         ) : (
                             <>
+                                {/* No Register link: accounts are pre-made from the
+                                    employee roster, so there is nothing to sign up
+                                    for. /register still answers on a direct visit
+                                    and explains that. */}
                                 <Nav.Link as={Link} to="/login">Login</Nav.Link>
-                                {/* Accounts are pre-made from the employee roster, so there is nothing to register for. */}
-                                {!allowlistMode && (
-                                    <Nav.Link as={Link} to="/register">Register</Nav.Link>
-                                )}
                                 <Nav.Link as={Link} to="/admin-login">Admin Login</Nav.Link>
                             </>
                         )}
