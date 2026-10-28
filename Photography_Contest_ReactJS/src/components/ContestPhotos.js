@@ -110,6 +110,9 @@ const ContestPhotos = ({ contestTitle, onBack }) => {
                             <Card.Img variant="top" className="photo-thumb" src={photo.photo_url} alt={`Costume submitted by ${photo.uploaded_by}`} />
                             <Card.Body>
                                 <Card.Text className="wrap-anywhere">Uploaded by: {photo.uploaded_by}</Card.Text>
+                                {photo.description && (
+                                    <Card.Text className="wrap-anywhere text-muted">{photo.description}</Card.Text>
+                                )}
                                 <Button
                                     className="w-100"
                                     variant={votedPhoto === photo.photo_url ? "success" : "primary"}

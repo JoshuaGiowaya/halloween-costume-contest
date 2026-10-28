@@ -93,6 +93,9 @@ const AdminContestPhotos = ({ contest, show, onHide }) => {
                                             <img src={photo.photo_url} className="card-img-top photo-thumb" alt={`Costume submitted by ${photo.uploaded_by}`} />
                                             <div className="card-body">
                                                 <p className="wrap-anywhere">Uploaded by: {photo.uploaded_by}</p>
+                                                {photo.description && (
+                                                    <p className="wrap-anywhere text-muted">{photo.description}</p>
+                                                )}
                                                 {loadingDelete ? (
                                                     <div className="text-center">
                                                         <Spinner animation="border" size="sm" role="status" className="mb-2">

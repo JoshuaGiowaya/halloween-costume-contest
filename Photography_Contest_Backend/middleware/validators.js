@@ -144,8 +144,12 @@ const validateContestUpdate = [
 // Photo Validators
 const validatePhotoCreate = [
   check('contest_title', 'Contest title is required').not().isEmpty(),
-  check('uploaded_by', 'Uploaded by is required').not().isEmpty(),
-  check('email', 'Email is required').isEmail().withMessage('Please provide a valid email'),
+  check('uploaded_by', 'Please enter the name to show on your submission').trim().not().isEmpty(),
+  check('email', 'Your session has expired - please log in again').isEmail(),
+  check('description', 'Keep the description under 500 characters')
+    .optional({ nullable: true })
+    .trim()
+    .isLength({ max: 500 }),
   check('photo_url', 'Photo URL is required').isURL().withMessage('Photo URL must be a valid URL'),
 ];
 
