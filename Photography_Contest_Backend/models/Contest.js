@@ -13,6 +13,7 @@ const contestSchema = new mongoose.Schema({
     voting_open: { type: Boolean, default: false },
     votingOpenedAt: { type: Date },
     manual_control: { type: Boolean, default: false }, // Indicates if contest is manually controlled
+    is_default: { type: Boolean, default: false }, // Users land here after login while it is running
     created_at: { type: Date, default: Date.now }
 });
 

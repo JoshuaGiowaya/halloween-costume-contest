@@ -120,6 +120,34 @@ const AdminDashboard = () => {
     }
   };
 
+  // Setting a default clears whichever contest held it before, so the refetch
+  // below is what moves the badge off the old one.
+  const handleSetDefault = async (title) => {
+    try {
+      await axios.post(`${process.env.REACT_APP_API_URL}/api/contests/${encodeURIComponent(title)}/default/set`, {}, {
+        headers: { 'x-api-key': process.env.REACT_APP_API_KEY },
+        withCredentials: true,
+      });
+      await fetchContests();
+    } catch (error) {
+      console.error('Error setting default contest:', error);
+      alert('Failed to set default contest');
+    }
+  };
+
+  const handleClearDefault = async (title) => {
+    try {
+      await axios.post(`${process.env.REACT_APP_API_URL}/api/contests/${encodeURIComponent(title)}/default/clear`, {}, {
+        headers: { 'x-api-key': process.env.REACT_APP_API_KEY },
+        withCredentials: true,
+      });
+      await fetchContests();
+    } catch (error) {
+      console.error('Error clearing default contest:', error);
+      alert('Failed to clear default contest');
+    }
+  };
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setNewContest({ ...newContest, [name]: value });
@@ -321,7 +349,10 @@ const AdminDashboard = () => {
                     <div className="col-12 col-sm-6 col-lg-4 mb-4" key={contest._id}>
                         <div className="card admin-card">
                             <div className="card-body">
-                                <h5 className="card-title wrap-anywhere">{contest.title}</h5>
+                                <h5 className="card-title wrap-anywhere">
+                                    {contest.title}
+                                    {contest.is_default && <span className="ms-2 badge bg-primary align-middle">Default</span>}
+                                </h5>
                                 <p className="card-text wrap-anywhere">{contest.description}</p>
                                 {contest.manual_control ? (
                                     <p className="card-text"><small className="text-muted">Type: Manual Control Contest</small></p>
@@ -377,6 +408,26 @@ const AdminDashboard = () => {
                                             ) : (
                                                 <Button variant="info" onClick={() => handleStartVoting(contest.title)}>
                                                     Start Voting
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Default landing contest */}
+                                    <div className="voting-controls">
+                                        <small className="text-muted d-block mb-2">
+                                            After Login: {contest.is_default
+                                                ? 'users land here while this contest is running'
+                                                : 'users land on the contest list'}
+                                        </small>
+                                        <div className="action-row">
+                                            {contest.is_default ? (
+                                                <Button variant="outline-primary" onClick={() => handleClearDefault(contest.title)}>
+                                                    Clear Default
+                                                </Button>
+                                            ) : (
+                                                <Button variant="primary" onClick={() => handleSetDefault(contest.title)}>
+                                                    Set as Default
                                                 </Button>
                                             )}
                                         </div>

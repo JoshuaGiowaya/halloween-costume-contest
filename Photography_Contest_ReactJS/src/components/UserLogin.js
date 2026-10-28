@@ -69,7 +69,9 @@ const UserLogin = () => {
         }
       );
       login(data);
-      navigate('/contests'); // Redirect to user profile page after successful login
+      // `fromLogin` lets the contest list open the default contest for us. It is
+      // only set here, so "Back to Contests" and later visits show the list.
+      navigate('/contests', { state: { fromLogin: true } });
     } catch (error) {
       setError(
         error.response && error.response.data.message

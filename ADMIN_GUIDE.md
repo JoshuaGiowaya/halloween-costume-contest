@@ -50,6 +50,22 @@ USERNAME_ONLY=true
    - Login with username + `yardstik-halloween-2026`
    - Verify the system works correctly
 
+### 1b. Pick the Default Contest (Optional)
+
+On the Admin Dashboard, each contest has an **After Login** control:
+
+- **Set as Default** — users who log in go straight into this contest's photos
+  instead of the contest list. Only one contest can be the default; setting a new
+  one clears the old.
+- **Clear Default** — users land on the contest list again.
+
+The redirect only fires when the contest is actually running (started, or inside
+its scheduled window). If the default contest has not started or has ended, users
+see the normal list, so it is safe to set this ahead of time.
+
+It also only fires on login. "Back to Contests", a page reload, and the Contests
+link in the menu all show the full list as usual.
+
 ### 2. Contest Launch (Thursday Morning)
 1. **Announce Voting Opening**
    - Update any contest announcements

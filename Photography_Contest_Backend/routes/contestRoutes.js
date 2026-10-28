@@ -9,6 +9,8 @@ const {
   stopContestByTitle,
   startVotingByTitle,
   stopVotingByTitle,
+  setDefaultContestByTitle,
+  clearDefaultContestByTitle,
   getManualControlMode,
   getDisableJoinWhenVotingStarts
 } = require('../apis/contestApi');
@@ -36,5 +38,9 @@ router.post('/:title/stop', protect, stopContestByTitle);
 // Admin-only voting controls
 router.post('/:title/voting/start', protect, startVotingByTitle);
 router.post('/:title/voting/stop', protect, stopVotingByTitle);
+
+// Admin-only default landing contest
+router.post('/:title/default/set', protect, setDefaultContestByTitle);
+router.post('/:title/default/clear', protect, clearDefaultContestByTitle);
 
 module.exports = router;
