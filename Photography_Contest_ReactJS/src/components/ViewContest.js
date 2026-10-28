@@ -6,6 +6,7 @@ import ContestPhotos from './ContestPhotos';
 import PastContestPhotos from './PastContestPhotos';
 import { UserAuthContext } from '../context/UserAuthContext';
 import { AdminAuthContext } from '../context/AdminAuthContext';
+import { prepareImage, validateFile, MAX_UPLOAD_MB } from '../utils/prepareImage';
 
 // Axios configuration with interceptors
 let spinnerCounter = 0;
@@ -84,6 +85,7 @@ const ViewContests = () => {
     // New state for file upload
     const [file, setFile] = useState(null);
     const [fileError, setFileError] = useState('');
+    const [preparing, setPreparing] = useState(false);
 
     useEffect(() => {
         // Fetch the contest data and disable join setting
@@ -237,25 +239,23 @@ const ViewContests = () => {
 
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
-        if (selectedFile) {
-            const fileSize = selectedFile.size / 1024 / 1024; // in MB
-            const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/heic', 'image/heif'];
+        if (!selectedFile) {
+            setFile(null);
+            setFileError('');
+            return;
+        }
 
-            // Validate file size and type
-            if (fileSize > 75) {
-                setFileError('File size exceeds 75 MB limit.');
-                setFile(null);
-            } else if (!allowedTypes.includes(selectedFile.type)) {
-                setFileError('Only JPG, JPEG, PNG, HEIC, and HEIF file types are allowed.');
-                setFile(null);
-            } else {
-                setFile(selectedFile);
-                setFileError('');
-            }
+        const check = validateFile(selectedFile);
+        if (check.ok) {
+            setFile(selectedFile);
+            setFileError('');
+        } else {
+            setFile(null);
+            setFileError(check.error);
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!file) {
@@ -263,9 +263,23 @@ const ViewContests = () => {
             return;
         }
 
+        // Convert HEIC, apply EXIF rotation and resize before upload, so the
+        // stored photo displays correctly in every browser.
+        let upload;
+        setPreparing(true);
+        try {
+            upload = await prepareImage(file);
+        } catch (error) {
+            console.error('There was an error preparing the photo!', error);
+            setFileError('We could not read that photo. Please try another one.');
+            return;
+        } finally {
+            setPreparing(false);
+        }
+
         // Upload image to imgbb API
         const formData = new FormData();
-        formData.append('image', file);
+        formData.append('image', upload);
         formData.append('key', '10fc3bdb39131e1d5f242cbb5d183090'); // Replace with your imgbb API key
 
         axios.post('https://api.imgbb.com/1/upload', formData)
@@ -457,11 +471,22 @@ const ViewContests = () => {
                         </Form.Group>
                         <Form.Group controlId="formPhotoFile" className="mt-3">
                             <Form.Label>Upload Photo</Form.Label>
-                            <Form.Control type="file" accept=".jpg, .jpeg, .png, .heic, .heif" onChange={handleFileChange} />
+                            {/* image/* is what makes iOS offer both Take Photo and Photo Library;
+                                the explicit extensions cover browsers that don't match HEIC to it. */}
+                            <Form.Control
+                                type="file"
+                                accept="image/*,.heic,.heif"
+                                onChange={handleFileChange}
+                                disabled={preparing}
+                            />
+                            <Form.Text className="text-muted d-block">
+                                JPG, PNG, WEBP, AVIF, HEIC or HEIF &middot; up to {MAX_UPLOAD_MB} MB.
+                                Large photos are resized automatically.
+                            </Form.Text>
                             {fileError && <Form.Text className="text-danger d-block">{fileError}</Form.Text>}
                         </Form.Group>
-                        <Button variant="primary" type="submit" className="mt-4 w-100">
-                            Submit
+                        <Button variant="primary" type="submit" className="mt-4 w-100" disabled={preparing || !file}>
+                            {preparing ? 'Preparing photo…' : 'Submit'}
                         </Button>
                     </Form>
                 </Modal.Body>
