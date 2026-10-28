@@ -170,6 +170,46 @@ const stopVotingByTitle = async (req, res) => {
     }
 };
 
+// Mark a contest as the default landing spot (admin-only at route level).
+// Only one contest can hold the flag, so any previous holder is cleared first.
+const setDefaultContestByTitle = async (req, res) => {
+    const { title } = req.params;
+    try {
+        const contest = await Contest.findOne({ title });
+        if (!contest) {
+            return res.status(404).json({ message: 'Contest not found' });
+        }
+
+        await Contest.updateMany({ title: { $ne: title } }, { is_default: false });
+        contest.is_default = true;
+        await contest.save();
+
+        return res.status(200).json({ message: 'Default contest set', contest });
+    } catch (error) {
+        console.error('Set default contest error:', error);
+        return res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// Clear the default landing spot (admin-only at route level)
+const clearDefaultContestByTitle = async (req, res) => {
+    const { title } = req.params;
+    try {
+        const contest = await Contest.findOneAndUpdate(
+            { title },
+            { is_default: false },
+            { new: true }
+        );
+        if (!contest) {
+            return res.status(404).json({ message: 'Contest not found' });
+        }
+        return res.status(200).json({ message: 'Default contest cleared', contest });
+    } catch (error) {
+        console.error('Clear default contest error:', error);
+        return res.status(500).json({ message: 'Server error' });
+    }
+};
+
 // Get manual control mode status
 const getManualControlMode = async (req, res) => {
     try {
@@ -205,6 +245,8 @@ module.exports = {
     stopContestByTitle,
     startVotingByTitle,
     stopVotingByTitle,
+    setDefaultContestByTitle,
+    clearDefaultContestByTitle,
     getManualControlMode,
     getDisableJoinWhenVotingStarts
 };

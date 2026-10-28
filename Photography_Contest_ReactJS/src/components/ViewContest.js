@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Container, Row, Col, Card, Button, ToggleButtonGroup, ToggleButton, Modal, Form, Spinner } from 'react-bootstrap';
 import ReactDOM from 'react-dom';
@@ -60,9 +61,19 @@ axios.interceptors.response.use(response => {
     return Promise.reject(error);
 });
 
+// A contest is running if it would show under "Ongoing". The post-login
+// redirect uses the same rule, so the two can never disagree.
+const isRunning = (contest, now) => (
+    contest.manual_control
+        ? contest.contest_status === 'active'
+        : new Date(contest.start_date) <= now && new Date(contest.end_date) >= now
+);
+
 const ViewContests = () => {
     const { user } = useContext(UserAuthContext);
     const { admin } = useContext(AdminAuthContext);
+    const location = useLocation();
+    const navigate = useNavigate();
 
     const loggedInUser = user ? user.email : (admin ? admin.email : null);
     const loggedInUsername = user ? user.username : (admin ? admin.username : null);
@@ -106,6 +117,20 @@ const ViewContests = () => {
             .then(([contestsResponse, disableJoinResponse]) => {
                 if (contestsResponse.status === 200) {
                     setContests(contestsResponse.data);
+
+                    // Straight from login: skip the list and open the default
+                    // contest, as long as it is actually running right now.
+                    if (location.state?.fromLogin) {
+                        const landing = contestsResponse.data.find(
+                            contest => contest.is_default && isRunning(contest, new Date())
+                        );
+                        if (landing) {
+                            setSelectedContest(landing.title);
+                        }
+                        // Drop the marker so going back, or reloading, lands on
+                        // the list rather than bouncing in here again.
+                        navigate(location.pathname, { replace: true, state: null });
+                    }
                 } else {
                     console.error('Error fetching contests: ', contestsResponse.status);
                 }
@@ -174,15 +199,7 @@ const ViewContests = () => {
     });
 
     // Filter contests based on contest status and voting status
-    const ongoingContests = contests.filter(contest => {
-        if (contest.manual_control) {
-            // Manual control contests are ongoing if contest is active
-            return contest.contest_status === 'active';
-        } else {
-            // Scheduled contests are ongoing if within date range
-            return new Date(contest.start_date) <= today && new Date(contest.end_date) >= today;
-        }
-    });
+    const ongoingContests = contests.filter(contest => isRunning(contest, today));
 
     const pastContests = contests.filter(contest => {
         if (contest.manual_control) {
