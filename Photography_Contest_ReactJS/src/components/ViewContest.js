@@ -479,7 +479,7 @@ const ViewContests = () => {
                                 disabled={preparing}
                             />
                             <Form.Text className="text-muted d-block">
-                                JPG, PNG, WEBP, HEIC or HEIF &middot; up to {MAX_UPLOAD_MB} MB.
+                                JPG, PNG, WEBP, AVIF, HEIC or HEIF &middot; up to {MAX_UPLOAD_MB} MB.
                                 Large photos are resized automatically.
                             </Form.Text>
                             {fileError && <Form.Text className="text-danger d-block">{fileError}</Form.Text>}

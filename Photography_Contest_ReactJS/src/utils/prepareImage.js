@@ -10,12 +10,17 @@ export const MAX_UPLOAD_MB = 75;
 export const MAX_DIMENSION = 2048;
 export const JPEG_QUALITY = 0.85;
 
-const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'];
+// AVIF is here because saving an image from a modern website on Android often
+// yields one. Browsers that can decode AVIF need no help converting it — the
+// <img> path below handles it — and browsers that can't will surface a clear
+// error rather than storing something voters cannot see.
+const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'avif', 'heic', 'heif'];
 const ALLOWED_MIME_TYPES = [
     'image/jpeg',
     'image/jpg',
     'image/png',
     'image/webp',
+    'image/avif',
     'image/heic',
     'image/heif',
 ];
@@ -44,7 +49,7 @@ export const validateFile = (file) => {
     const recognized = ALLOWED_EXTENSIONS.includes(extensionOf(file.name))
         || ALLOWED_MIME_TYPES.includes((file.type || '').toLowerCase());
     if (!recognized) {
-        return { ok: false, error: 'Only JPG, PNG, WEBP, HEIC and HEIF photos are allowed.' };
+        return { ok: false, error: 'Only JPG, PNG, WEBP, AVIF, HEIC and HEIF photos are allowed.' };
     }
 
     const sizeMb = file.size / 1024 / 1024;

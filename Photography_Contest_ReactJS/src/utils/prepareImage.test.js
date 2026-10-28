@@ -27,9 +27,20 @@ describe('validateFile', () => {
         ['costume.jpeg', 'image/jpeg'],
         ['costume.png', 'image/png'],
         ['costume.webp', 'image/webp'],
+        ['costume.avif', 'image/avif'],
         ['costume.heif', 'image/heif'],
     ])('accepts %s', (name, type) => {
         expect(validateFile(fakeFile(name, type))).toEqual({ ok: true });
+    });
+
+    // Saving an image from a website on Android commonly produces one of these,
+    // sometimes without a usable MIME type.
+    it('accepts an AVIF saved from the web with no MIME type', () => {
+        expect(validateFile(fakeFile('download.avif', ''))).toEqual({ ok: true });
+    });
+
+    it('accepts an AVIF whose name lost its extension', () => {
+        expect(validateFile(fakeFile('download', 'image/avif'))).toEqual({ ok: true });
     });
 
     it('accepts a photo whose name lost its extension but kept its MIME type', () => {
@@ -39,7 +50,7 @@ describe('validateFile', () => {
     it('rejects a non-image file', () => {
         const result = validateFile(fakeFile('resume.pdf', 'application/pdf'));
         expect(result.ok).toBe(false);
-        expect(result.error).toMatch(/Only JPG, PNG, WEBP, HEIC and HEIF/);
+        expect(result.error).toMatch(/Only JPG, PNG, WEBP, AVIF, HEIC and HEIF/);
     });
 
     it('rejects a photo over the size limit and names the limit', () => {
@@ -64,6 +75,12 @@ describe('isHeic', () => {
 
     it('does not flag a JPEG', () => {
         expect(isHeic(fakeFile('costume.jpg', 'image/jpeg'))).toBe(false);
+    });
+
+    // AVIF shares HEIF's container but not its codec, so it must not be routed
+    // to the HEIC converter — browsers decode it natively or not at all.
+    it('does not flag an AVIF', () => {
+        expect(isHeic(fakeFile('download.avif', 'image/avif'))).toBe(false);
     });
 });
 
