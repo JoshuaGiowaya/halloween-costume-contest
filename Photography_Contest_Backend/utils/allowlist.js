@@ -5,8 +5,6 @@ const logger = require('./logger');
 // Maps a normalized employee email to the display name shown on their photo.
 // Loaded once at startup from the roster file named by EMPLOYEE_ALLOWLIST_FILE.
 // The roster is never committed - this repo is public.
-let roster = null;
-
 const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
 
 // Splits "email,name" while leaving commas inside the name alone.
@@ -54,18 +52,8 @@ const loadRoster = () => {
 
 const isEnabled = () => !!process.env.EMPLOYEE_ALLOWLIST_FILE;
 
-// Returns the employee's display name, or null when they are not on the roster.
-const displayNameFor = (email) => {
-  if (!roster) {
-    roster = loadRoster();
-  }
-
-  return roster ? roster.get(normalizeEmail(email)) || null : null;
-};
-
 module.exports = {
   isEnabled,
-  displayNameFor,
   normalizeEmail,
   loadRoster,
 };
