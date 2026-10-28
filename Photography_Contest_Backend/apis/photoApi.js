@@ -8,15 +8,21 @@ const createPhoto = async (req, res) => {
         return res.status(400).json({ errors: errors.array() });
     }
 
-    const { contest_title, uploaded_by, email, photo_url } = req.body;
+    const { contest_title, uploaded_by, email, description, photo_url } = req.body;
 
     try {
         const existingPhoto = await Photo.findOne({ email, contest_title });
         if (existingPhoto) {
-            return res.status(400).json({ error: "You have already participated in this contest using this email." });
+            return res.status(400).json({ error: "You have already entered this contest. Only one costume per person." });
         }
 
-        const photo = new Photo({ contest_title, uploaded_by, email, photo_url });
+        const photo = new Photo({
+            contest_title,
+            uploaded_by: String(uploaded_by).trim(),
+            email,
+            description: String(description || '').trim(),
+            photo_url,
+        });
         const savedPhoto = await photo.save();
         console.log('Photo uploaded:', savedPhoto);
         res.status(200).json(savedPhoto);

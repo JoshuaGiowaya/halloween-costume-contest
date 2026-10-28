@@ -2,8 +2,9 @@ const mongoose = require('mongoose');
 
 const photoSchema = new mongoose.Schema({
     contest_title: String,
-    uploaded_by: String,  
-    email: { type: String, required: true },  
+    uploaded_by: String,
+    email: { type: String, required: true },
+    description: { type: String, default: '' },
     photo_url: String,
     uploaded_at: { type: Date, default: Date.now }
 });

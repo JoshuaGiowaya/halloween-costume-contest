@@ -198,6 +198,31 @@ button,
   margin-inline: auto;
 }
 
+/* The contest entry form lives in a modal rather than a .form-card, so it needs
+   its own sizing. 16px is the threshold below which iOS Safari zooms the page in
+   when a field takes focus, and never zooms back out. */
+.submit-form .form-label {
+  font-weight: bold;
+  color: var(--brand);
+  margin-bottom: 0.25rem;
+}
+
+.submit-form .form-control {
+  font-size: 1rem;
+  min-height: var(--tap-target);
+}
+
+/* A textarea sizes from its rows, so the thumb-height floor must not squash it. */
+.submit-form textarea.form-control {
+  min-height: calc(var(--tap-target) * 2);
+}
+
+/* iOS renders the file picker as a button inside the control; without the extra
+   room the label collides with the field's own border. */
+.submit-form input[type='file'].form-control {
+  padding: 0.5rem 0.75rem;
+}
+
 /* Six OTP boxes that share the available width instead of overflowing it. */
 .otp-inputs {
   display: flex;

@@ -7,6 +7,7 @@ import PastContestPhotos from './PastContestPhotos';
 import { UserAuthContext } from '../context/UserAuthContext';
 import { AdminAuthContext } from '../context/AdminAuthContext';
 import { prepareImage, validateFile, MAX_UPLOAD_MB } from '../utils/prepareImage';
+import { serverMessage } from '../utils/serverMessage';
 
 // Axios configuration with interceptors
 let spinnerCounter = 0;
@@ -74,6 +75,7 @@ const ViewContests = () => {
     const [modalData, setModalData] = useState({
         contest_title: '',
         uploaded_by: '',
+        description: '',
         email: '',
         photo_url: ''
     });
@@ -87,6 +89,8 @@ const ViewContests = () => {
     const [file, setFile] = useState(null);
     const [fileError, setFileError] = useState('');
     const [preparing, setPreparing] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState('');
 
     useEffect(() => {
         // Fetch the contest data and disable join setting
@@ -223,12 +227,19 @@ const ViewContests = () => {
         setModalMode(mode);
         setModalData({
             contest_title: contest.title,
-            uploaded_by: loggedInUsername, // Use context data
-            email: loggedInUser, // Use context data
+            // Prefilled from the account but editable, so someone can enter the
+            // name they want on the board - and so a phone that lost its session
+            // still lets them type one instead of showing a blank locked field.
+            uploaded_by: loggedInUsername || '',
+            description: '',
+            email: loggedInUser || '',
             photo_url: photoUrl
         });
         setFile(null);
         setFileError('');
+        // Say so up front rather than after they have picked a photo and waited
+        // for it to upload.
+        setSubmitError(loggedInUser ? '' : 'Your session has expired. Please log in again before submitting.');
         setShowModal(true);
     };
 
@@ -280,11 +291,23 @@ const ViewContests = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setSubmitError('');
 
         const replacing = modalMode === 'replace';
 
+        // Replace only swaps the photo, so it has no name field to check.
+        if (!replacing && !modalData.uploaded_by.trim()) {
+            setSubmitError('Please enter the name to show on your submission.');
+            return;
+        }
+
+        if (!modalData.email) {
+            setSubmitError('Your session has expired. Please log in again, then resubmit.');
+            return;
+        }
+
         if (!file) {
-            alert("Please select a valid image file.");
+            setSubmitError('Please choose a photo of your costume.');
             return;
         }
 
@@ -296,87 +319,71 @@ const ViewContests = () => {
             upload = await prepareImage(file);
         } catch (error) {
             console.error('There was an error preparing the photo!', error);
-            setFileError('We could not read that photo. Please try another one.');
-            return;
-        } finally {
+            setFileError(error.message || 'We could not read that photo. Please try another one.');
             setPreparing(false);
+            return;
         }
+        setPreparing(false);
 
-        // Upload image to imgbb API
-        const formData = new FormData();
-        formData.append('image', upload);
-        formData.append('key', '10fc3bdb39131e1d5f242cbb5d183090'); // Replace with your imgbb API key
+        setSubmitting(true);
+        try {
+            const formData = new FormData();
+            formData.append('image', upload);
+            formData.append('key', '10fc3bdb39131e1d5f242cbb5d183090'); // Replace with your imgbb API key
 
-        axios.post('https://api.imgbb.com/1/upload', formData)
-            .then(response => {
-                if (response.data && response.data.data && response.data.data.url) {
-                    const imgUrl = response.data.data.url;
+            const imgbbResponse = await axios.post('https://api.imgbb.com/1/upload', formData);
+            const imgUrl = imgbbResponse.data
+                && imgbbResponse.data.data
+                && imgbbResponse.data.data.url;
 
-                    if (replacing) {
-                        // The entry already exists, so swap its photo in place.
-                        axios.put(`${process.env.REACT_APP_API_URL}/api/photos/update`, {
-                            contest_title: modalData.contest_title,
-                            email: modalData.email,
-                            photo_url: imgUrl
-                        }, {
-                            headers: {
-                                'x-api-key': process.env.REACT_APP_API_KEY,
-                            },
-                            withCredentials: true,
-                        })
-                            .then(response => {
-                                if (response.status === 200) {
-                                    alert("Photo replaced successfully")
-                                    console.log('Photo replaced successfully', response.data);
-                                    setUserPhotos(userPhotos.map(photo => (
-                                        photo.contest_title === modalData.contest_title && photo.email === modalData.email
-                                            ? { ...photo, photo_url: imgUrl }
-                                            : photo
-                                    )));
-                                    setShowModal(false);
-                                } else {
-                                    console.error('Error replacing photo:', response.status);
-                                }
-                            })
-                            .catch(error => {
-                                alert("Error replacing photo");
-                                console.error('There was an error replacing the photo!', error);
-                            });
-                        return;
-                    }
+            if (!imgUrl) {
+                setSubmitError('The photo service did not accept that image. Please try another photo.');
+                return;
+            }
 
-                    // Submit modalData to backend using imgUrl
-                    axios.post(`${process.env.REACT_APP_API_URL}/api/photos/insert`, {
-                        ...modalData,
-                        photo_url: imgUrl  // Update photo_url with imgUrl
-                    }, {
-                        headers: {
-                            'x-api-key': process.env.REACT_APP_API_KEY,
-                        },
-                        withCredentials: true,
-                    })
-                        .then(response => {
-                            if (response.status === 200) {
-                                alert("Photo submitted successfully")
-                                console.log('Photo submitted successfully', response.data);
-                                setUserPhotos([...userPhotos, response.data]);
-                                setShowModal(false);
-                            } else {
-                                console.error('Error submitting photo:', response.status);
-                            }
-                        })
-                        .catch(error => {
-                            alert("Error submitting photo");
-                            console.error('There was an error submitting the photo!', error);
-                        });
-                } else {
-                    alert("Failed to upload image to imgbb.");
-                }
-            })
-            .catch(error => {
-                alert("Error uploading image to imgbb.");
-                console.error('There was an error uploading the image to imgbb!', error);
-            });
+            const requestOptions = {
+                headers: {
+                    'x-api-key': process.env.REACT_APP_API_KEY,
+                },
+                withCredentials: true,
+            };
+
+            if (replacing) {
+                // The entry already exists, so swap its photo in place.
+                await axios.put(`${process.env.REACT_APP_API_URL}/api/photos/update`, {
+                    contest_title: modalData.contest_title,
+                    email: modalData.email,
+                    photo_url: imgUrl
+                }, requestOptions);
+
+                setUserPhotos(userPhotos.map(photo => (
+                    photo.contest_title === modalData.contest_title && photo.email === modalData.email
+                        ? { ...photo, photo_url: imgUrl }
+                        : photo
+                )));
+                setShowModal(false);
+                alert('Your photo has been replaced.');
+                return;
+            }
+
+            const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/photos/insert`, {
+                ...modalData,
+                uploaded_by: modalData.uploaded_by.trim(),
+                description: modalData.description.trim(),
+                photo_url: imgUrl
+            }, requestOptions);
+
+            setUserPhotos([...userPhotos, response.data]);
+            setShowModal(false);
+            alert('Your costume has been submitted. Good luck!');
+        } catch (error) {
+            console.error('There was an error submitting the photo!', error);
+            setSubmitError(serverMessage(error, replacing
+                ? 'We could not replace your photo. Please check your connection and try again.'
+                : 'We could not submit your costume. Please check your connection and try again.'));
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     const handleBack = () => {
@@ -521,25 +528,59 @@ const ViewContests = () => {
 
             {/* Edge-to-edge on a phone, a centred dialog from 576px up. */}
             <Modal show={showModal} onHide={() => setShowModal(false)} fullscreen="sm-down" centered>
+                {/* The contest name goes in the body, not the title: a long one
+                    runs into the close button up here. */}
                 <Modal.Header closeButton>
-                    <Modal.Title>{modalMode === 'replace' ? 'Replace Photo' : 'Join Contest'}</Modal.Title>
+                    <Modal.Title>{modalMode === 'replace' ? 'Replace your photo' : 'Submit your costume'}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    <Form onSubmit={handleSubmit}>
-                        <Form.Group controlId="formTitle">
-                            <Form.Label>Contest Title</Form.Label>
-                            <Form.Control type="text" name="contest_title" value={modalData.contest_title} readOnly />
-                        </Form.Group>
-                        <Form.Group controlId="formUploadedBy" className="mt-3">
-                            <Form.Label>Uploaded By</Form.Label>
-                            <Form.Control type="text" name="uploaded_by" value={modalData.uploaded_by} readOnly />
-                        </Form.Group>
-                        <Form.Group controlId="formEmail" className="mt-3">
-                            <Form.Label>Email</Form.Label>
-                            <Form.Control type="text" name="email" value={modalData.email} readOnly />
-                        </Form.Group>
+                    {/* .submit-form keeps every control at least a thumb tall and
+                        at 16px, the size below which iOS Safari zooms the page in
+                        the moment a field takes focus. */}
+                    <Form onSubmit={handleSubmit} className="submit-form" noValidate>
+                        <p className="text-muted wrap-anywhere mb-3">{modalData.contest_title}</p>
+                        {/* /photos/update only swaps photo_url, so Replace leaves the
+                            name and description off rather than offering edits it
+                            would silently drop. */}
+                        {modalMode !== 'replace' && (
+                            <>
+                                <Form.Group controlId="formUploadedBy">
+                                    <Form.Label>Your name</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        name="uploaded_by"
+                                        value={modalData.uploaded_by}
+                                        onChange={handleModalChange}
+                                        placeholder="The name to show on your costume"
+                                        autoComplete="name"
+                                        autoCapitalize="words"
+                                        enterKeyHint="next"
+                                        maxLength={80}
+                                        disabled={preparing || submitting}
+                                    />
+                                </Form.Group>
+                                <Form.Group controlId="formDescription" className="mt-3">
+                                    <Form.Label>Describe your costume</Form.Label>
+                                    <Form.Control
+                                        as="textarea"
+                                        rows={3}
+                                        name="description"
+                                        value={modalData.description}
+                                        onChange={handleModalChange}
+                                        placeholder="Who or what are you dressed as?"
+                                        autoCapitalize="sentences"
+                                        enterKeyHint="done"
+                                        maxLength={500}
+                                        disabled={preparing || submitting}
+                                    />
+                                    <Form.Text className="text-muted d-block">
+                                        Optional &middot; up to 500 characters.
+                                    </Form.Text>
+                                </Form.Group>
+                            </>
+                        )}
                         {modalMode === 'replace' && modalData.photo_url && (
-                            <Form.Group className="mt-3">
+                            <Form.Group>
                                 <Form.Label>Current Photo</Form.Label>
                                 <img
                                     src={modalData.photo_url}
@@ -549,14 +590,14 @@ const ViewContests = () => {
                             </Form.Group>
                         )}
                         <Form.Group controlId="formPhotoFile" className="mt-3">
-                            <Form.Label>{modalMode === 'replace' ? 'Upload New Photo' : 'Upload Photo'}</Form.Label>
+                            <Form.Label>{modalMode === 'replace' ? 'New costume photo' : 'Costume photo'}</Form.Label>
                             {/* image/* is what makes iOS offer both Take Photo and Photo Library;
                                 the explicit extensions cover browsers that don't match HEIC to it. */}
                             <Form.Control
                                 type="file"
                                 accept="image/*,.heic,.heif"
                                 onChange={handleFileChange}
-                                disabled={preparing}
+                                disabled={preparing || submitting}
                             />
                             <Form.Text className="text-muted d-block">
                                 JPG, PNG, WEBP, AVIF, HEIC or HEIF &middot; up to {MAX_UPLOAD_MB} MB.
@@ -564,8 +605,20 @@ const ViewContests = () => {
                             </Form.Text>
                             {fileError && <Form.Text className="text-danger d-block">{fileError}</Form.Text>}
                         </Form.Group>
-                        <Button variant="primary" type="submit" className="mt-4 w-100" disabled={preparing || !file}>
-                            {preparing ? 'Preparing photo…' : (modalMode === 'replace' ? 'Replace Photo' : 'Submit')}
+                        {submitError && (
+                            <div className="alert alert-danger mt-3 mb-0" role="alert">{submitError}</div>
+                        )}
+                        <Button
+                            variant="primary"
+                            type="submit"
+                            className="mt-4 w-100"
+                            disabled={preparing || submitting}
+                        >
+                            {preparing
+                                ? 'Preparing photo…'
+                                : submitting
+                                    ? 'Submitting…'
+                                    : (modalMode === 'replace' ? 'Replace photo' : 'Submit costume')}
                         </Button>
                     </Form>
                 </Modal.Body>
