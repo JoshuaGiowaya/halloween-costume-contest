@@ -62,11 +62,13 @@ const updateContestByTitle = async (req, res) => {
             { title: contestTitle },
             contestUpdate
         );
-        if (updatedContest.modifiedCount > 0) {
+        // Match, not modify: saving the form without changing anything is a
+        // successful no-op, not a missing record.
+        if (updatedContest.matchedCount > 0) {
             console.log('Contest Updated', updatedContest);
             res.status(200).json({ update: 'success', updatedContest });
         } else {
-            console.log('Contest not updated');
+            console.log('Contest not found');
             res.status(404).json({ update: 'Record Not Found' });
         }
     } catch (error) {
