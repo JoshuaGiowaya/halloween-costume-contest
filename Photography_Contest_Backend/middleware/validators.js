@@ -153,10 +153,22 @@ const validatePhotoCreate = [
   check('photo_url', 'Photo URL is required').isURL().withMessage('Photo URL must be a valid URL'),
 ];
 
+// An edit can change any part of the entry, so everything but the keys that
+// find it is optional - someone fixing a typo in their description shouldn't
+// have to upload their photo again.
 const validatePhotoUpdate = [
   check('contest_title', 'Contest title is required').not().isEmpty(),
-  check('email', 'Email is required').isEmail().withMessage('Please provide a valid email'),
-  check('photo_url', 'Photo URL is required').isURL().withMessage('Photo URL must be a valid URL'),
+  check('email', 'Your session has expired - please log in again').isEmail(),
+  check('uploaded_by', 'Please enter the name to show on your submission')
+    .optional()
+    .trim()
+    .not()
+    .isEmpty(),
+  check('description', 'Keep the description under 500 characters')
+    .optional({ nullable: true })
+    .trim()
+    .isLength({ max: 500 }),
+  check('photo_url', 'Photo URL must be a valid URL').optional().isURL(),
 ];
 
 const validatePhotoDelete = [

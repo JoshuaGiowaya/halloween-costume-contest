@@ -52,12 +52,23 @@ const updatePhoto = async (req, res) => {
         return res.status(400).json({ errors: errors.array() });
     }
 
-    const { contest_title, email, photo_url } = req.body;
+    const { contest_title, email, uploaded_by, description, photo_url } = req.body;
+
+    // Only touch the fields the edit actually sent, so leaving the photo alone
+    // keeps the existing one.
+    const changes = {};
+    if (uploaded_by !== undefined) changes.uploaded_by = String(uploaded_by).trim();
+    if (description !== undefined) changes.description = String(description || '').trim();
+    if (photo_url) changes.photo_url = photo_url;
+
+    if (!Object.keys(changes).length) {
+        return res.status(400).json({ error: 'There is nothing to update.' });
+    }
 
     try {
         const updatedPhoto = await Photo.findOneAndUpdate(
             { contest_title, email },
-            { photo_url },
+            changes,
             { new: true }
         );
         if (updatedPhoto) {
