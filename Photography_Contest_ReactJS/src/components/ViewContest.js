@@ -77,6 +77,7 @@ const ViewContests = () => {
         email: '',
         photo_url: ''
     });
+    const [modalMode, setModalMode] = useState('join'); // 'join' for a first entry, 'replace' to swap the photo
     const [userPhotos, setUserPhotos] = useState([]);
     const [viewingPastContest, setViewingPastContest] = useState(false);
     const [loading, setLoading] = useState(true); // Add loading state
@@ -213,20 +214,42 @@ const ViewContests = () => {
         setViewingPastContest(isPast);
     };
 
-    const handleJoinClick = (contest) => {
-        // Ensure userPhotos is updated and contains the current user's photos
-        const existingPhoto = userPhotos.find(photo => photo.contest_title === contest.title && photo.email === loggedInUser);
-        if (existingPhoto) {
-            alert("You have already participated in this contest.");
-            return;
-        }
+    // The entry this user already has in a contest, if any.
+    const entryFor = (contestTitle) => (
+        userPhotos.find(photo => photo.contest_title === contestTitle && photo.email === loggedInUser)
+    );
+
+    const openModal = (mode, contest, photoUrl = '') => {
+        setModalMode(mode);
         setModalData({
             contest_title: contest.title,
             uploaded_by: loggedInUsername, // Use context data
             email: loggedInUser, // Use context data
-            photo_url: ''
+            photo_url: photoUrl
         });
+        setFile(null);
+        setFileError('');
         setShowModal(true);
+    };
+
+    const handleJoinClick = (contest) => {
+        // Ensure userPhotos is updated and contains the current user's photos
+        const existingPhoto = entryFor(contest.title);
+        if (existingPhoto) {
+            alert("You have already participated in this contest.");
+            return;
+        }
+        openModal('join', contest);
+    };
+
+    const handleReplaceClick = (contest) => {
+        const existingPhoto = entryFor(contest.title);
+        if (!existingPhoto) {
+            alert("You haven't entered this contest yet.");
+            return;
+        }
+        // Carry the current photo in so the modal can show what's being replaced.
+        openModal('replace', contest, existingPhoto.photo_url);
     };
 
     const handleModalChange = (e) => {
@@ -258,6 +281,8 @@ const ViewContests = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        const replacing = modalMode === 'replace';
+
         if (!file) {
             alert("Please select a valid image file.");
             return;
@@ -286,6 +311,39 @@ const ViewContests = () => {
             .then(response => {
                 if (response.data && response.data.data && response.data.data.url) {
                     const imgUrl = response.data.data.url;
+
+                    if (replacing) {
+                        // The entry already exists, so swap its photo in place.
+                        axios.put(`${process.env.REACT_APP_API_URL}/api/photos/update`, {
+                            contest_title: modalData.contest_title,
+                            email: modalData.email,
+                            photo_url: imgUrl
+                        }, {
+                            headers: {
+                                'x-api-key': process.env.REACT_APP_API_KEY,
+                            },
+                            withCredentials: true,
+                        })
+                            .then(response => {
+                                if (response.status === 200) {
+                                    alert("Photo replaced successfully")
+                                    console.log('Photo replaced successfully', response.data);
+                                    setUserPhotos(userPhotos.map(photo => (
+                                        photo.contest_title === modalData.contest_title && photo.email === modalData.email
+                                            ? { ...photo, photo_url: imgUrl }
+                                            : photo
+                                    )));
+                                    setShowModal(false);
+                                } else {
+                                    console.error('Error replacing photo:', response.status);
+                                }
+                            })
+                            .catch(error => {
+                                alert("Error replacing photo");
+                                console.error('There was an error replacing the photo!', error);
+                            });
+                        return;
+                    }
 
                     // Submit modalData to backend using imgUrl
                     axios.post(`${process.env.REACT_APP_API_URL}/api/photos/insert`, {
@@ -325,6 +383,25 @@ const ViewContests = () => {
         setSelectedContest(null);
         setViewingPastContest(false);
         setFilter("ongoing"); // Reset filter to show ongoing contests
+    };
+
+    // Join for a first entry, Replace once this user already has a photo in.
+    const renderEntryButton = (contest) => {
+        if (contest.voting_open && disableJoinWhenVotingStarts) {
+            return <Button variant="secondary" disabled>Submissions Closed - Voting Started</Button>;
+        }
+
+        if (!entryFor(contest.title)) {
+            return <Button variant="success" onClick={() => handleJoinClick(contest)}>Join</Button>;
+        }
+
+        // Votes are recorded against a photo_url, so swapping the photo once
+        // voting is open would strand the votes already cast on the old one.
+        if (contest.voting_open) {
+            return <Button variant="secondary" disabled>Voting Started - Photo Locked</Button>;
+        }
+
+        return <Button variant="warning" onClick={() => handleReplaceClick(contest)}>Replace Photo</Button>;
     };
 
     const renderContests = (contests, isPast) => (
@@ -377,11 +454,7 @@ const ViewContests = () => {
                                 contest.contest_status === 'active' ? (
                                     <>
                                         <Button variant="primary" onClick={() => handleViewClick(contest.title, false)}>View</Button>
-                                        {contest.voting_open && disableJoinWhenVotingStarts ? (
-                                            <Button variant="secondary" disabled>Submissions Closed - Voting Started</Button>
-                                        ) : (
-                                            <Button variant="success" onClick={() => handleJoinClick(contest)}>Join</Button>
-                                        )}
+                                        {renderEntryButton(contest)}
                                     </>
                                 ) : (
                                     <Button variant="secondary" disabled>Contest Not Started</Button>
@@ -393,11 +466,7 @@ const ViewContests = () => {
                                 // Scheduled contests - ongoing
                                 <>
                                     <Button variant="primary" onClick={() => handleViewClick(contest.title, false)}>View</Button>
-                                    {contest.voting_open && disableJoinWhenVotingStarts ? (
-                                        <Button variant="secondary" disabled>Submissions Closed - Voting Started</Button>
-                                    ) : (
-                                        <Button variant="success" onClick={() => handleJoinClick(contest)}>Join</Button>
-                                    )}
+                                    {renderEntryButton(contest)}
                                 </>
                             )}
                         </div>
@@ -453,7 +522,7 @@ const ViewContests = () => {
             {/* Edge-to-edge on a phone, a centred dialog from 576px up. */}
             <Modal show={showModal} onHide={() => setShowModal(false)} fullscreen="sm-down" centered>
                 <Modal.Header closeButton>
-                    <Modal.Title>Join Contest</Modal.Title>
+                    <Modal.Title>{modalMode === 'replace' ? 'Replace Photo' : 'Join Contest'}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <Form onSubmit={handleSubmit}>
@@ -469,8 +538,18 @@ const ViewContests = () => {
                             <Form.Label>Email</Form.Label>
                             <Form.Control type="text" name="email" value={modalData.email} readOnly />
                         </Form.Group>
+                        {modalMode === 'replace' && modalData.photo_url && (
+                            <Form.Group className="mt-3">
+                                <Form.Label>Current Photo</Form.Label>
+                                <img
+                                    src={modalData.photo_url}
+                                    alt="Your current entry"
+                                    className="d-block w-100 photo-thumb"
+                                />
+                            </Form.Group>
+                        )}
                         <Form.Group controlId="formPhotoFile" className="mt-3">
-                            <Form.Label>Upload Photo</Form.Label>
+                            <Form.Label>{modalMode === 'replace' ? 'Upload New Photo' : 'Upload Photo'}</Form.Label>
                             {/* image/* is what makes iOS offer both Take Photo and Photo Library;
                                 the explicit extensions cover browsers that don't match HEIC to it. */}
                             <Form.Control
@@ -486,7 +565,7 @@ const ViewContests = () => {
                             {fileError && <Form.Text className="text-danger d-block">{fileError}</Form.Text>}
                         </Form.Group>
                         <Button variant="primary" type="submit" className="mt-4 w-100" disabled={preparing || !file}>
-                            {preparing ? 'Preparing photo…' : 'Submit'}
+                            {preparing ? 'Preparing photo…' : (modalMode === 'replace' ? 'Replace Photo' : 'Submit')}
                         </Button>
                     </Form>
                 </Modal.Body>
