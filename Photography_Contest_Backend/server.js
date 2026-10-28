@@ -6,6 +6,7 @@ const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const connectDB = require('./utils/db');
+const allowlist = require('./utils/allowlist');
 dotenv.config(); // Load environment variables from .env file
 
 // Import custom middleware
@@ -40,6 +41,10 @@ app.use(morgan('common')); // Logging HTTP requests
 
 // Connect to MongoDB
 connectDB();
+
+// Load the employee roster now so a missing or empty file fails at boot,
+// rather than on the first registration attempt during the contest.
+allowlist.loadRoster();
 
 // Import routes
 const contestRoutes = require('./routes/contestRoutes');

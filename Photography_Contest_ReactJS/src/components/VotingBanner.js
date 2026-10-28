@@ -1,5 +1,6 @@
 import React from 'react';
 import { Alert } from 'react-bootstrap';
+import { SHARED_PASSWORD } from '../constants';
 
 const VotingBanner = () => {
   return (
@@ -24,7 +25,7 @@ const VotingBanner = () => {
           <h6 style={{ color: '#007bff', fontWeight: 'bold' }}>🔐 Quick Access</h6>
           <p className="mb-0">
             <strong>Username:</strong> Your choice<br/>
-            <strong>Password:</strong> <code className="wrap-anywhere">yardstik-halloween-2026</code>
+            <strong>Password:</strong> <code className="wrap-anywhere">{SHARED_PASSWORD}</code>
           </p>
         </div>
         <div className="col-12 col-md-4">

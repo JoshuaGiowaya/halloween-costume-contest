@@ -1,24 +1,29 @@
 const { check } = require('express-validator');
+const allowlist = require('../utils/allowlist');
 
 // User Validators
 const validateRegister = (req, res, next) => {
   const fixedPasswordMode = !!process.env.FIXED_USER_PASSWORD;
   const usernameOnlyMode = process.env.USERNAME_ONLY === 'true';
-  
-  const validations = [
-    check('username', 'Username is required').not().isEmpty(),
-  ];
-  
+  const allowlistMode = allowlist.isEnabled();
+
+  // Accounts are seeded from the roster in allowlist mode, so registration is
+  // closed. Skip validation and let the handler explain that rather than
+  // answering with a field error about a form nobody should be filling in.
+  const validations = allowlistMode
+    ? []
+    : [check('username', 'Username is required').not().isEmpty()];
+
   // Only add email validation if not in username-only mode
-  if (!usernameOnlyMode) {
+  if (!allowlistMode && !usernameOnlyMode) {
     validations.push(check('email', 'Please include a valid email').isEmail());
   }
-  
+
   // Only add password validation if not in fixed password mode
-  if (!fixedPasswordMode) {
+  if (!allowlistMode && !fixedPasswordMode) {
     validations.push(check('password', 'Password must be at least 6 characters').isLength({ min: 6 }));
   }
-  
+
   // Run validations
   const runValidations = validations.reduce((acc, validation) => {
     return acc.then(() => validation.run(req));
@@ -34,19 +39,19 @@ const validateRegister = (req, res, next) => {
 };
 
 const validateLogin = (req, res, next) => {
-  const usernameOnlyMode = process.env.USERNAME_ONLY === 'true';
-  
+  const usernameOnlyMode = process.env.USERNAME_ONLY === 'true' && !allowlist.isEnabled();
+
   const validations = [
     check('password', 'Password is required').exists(),
   ];
-  
+
   // Use username or email based on mode
   if (usernameOnlyMode) {
     validations.push(check('username', 'Username is required').not().isEmpty());
   } else {
-    validations.push(check('email', 'Please include a valid email').isEmail());
+    validations.push(check('email', 'Please include a valid email').trim().isEmail());
   }
-  
+
   // Run validations
   const runValidations = validations.reduce((acc, validation) => {
     return acc.then(() => validation.run(req));

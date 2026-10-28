@@ -5,10 +5,12 @@ import Nav from "react-bootstrap/Nav";
 import Container from "react-bootstrap/Container";
 import { UserAuthContext } from '../context/UserAuthContext';
 import { AdminAuthContext } from '../context/AdminAuthContext';
+import useContestModes from '../hooks/useContestModes';
 
 const NavbarComponent = () => {
     const navigate = useNavigate();
     const [expanded, setExpanded] = useState(false);
+    const { allowlistMode } = useContestModes();
 
     const { isAuth: isUserAuth, user, logout: userLogout } = useContext(UserAuthContext);
     const { isAdminAuth, admin, logout: adminLogout } = useContext(AdminAuthContext);
@@ -50,7 +52,10 @@ const NavbarComponent = () => {
                             ) : (
                                 <>
                                     <Nav.Link as={Link} to="/login" onClick={() => setExpanded(false)}>Login</Nav.Link>
-                                    <Nav.Link as={Link} to="/register" onClick={() => setExpanded(false)}>Register</Nav.Link>
+                                    {/* Accounts are pre-made from the employee roster, so there is nothing to register for. */}
+                                    {!allowlistMode && (
+                                        <Nav.Link as={Link} to="/register" onClick={() => setExpanded(false)}>Register</Nav.Link>
+                                    )}
                                     <Nav.Link as={Link} to="/admin-login" onClick={() => setExpanded(false)}>Admin Login</Nav.Link>
                                 </>
                             )}

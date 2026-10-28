@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Modal, Button, Spinner } from 'react-bootstrap';
 import { UserAuthContext } from '../context/UserAuthContext';
+import { SHARED_PASSWORD } from '../constants';
 
 const UserLogin = () => {
   const [email, setEmail] = useState('');
@@ -195,9 +196,14 @@ const UserLogin = () => {
       <h2 className="text-center" style={{ color: '#007bff' }}>Login</h2>
       {message && <div className="alert alert-success text-center">{message}</div>}
       {error && <div className="alert alert-danger text-center">{error}</div>}
-      {usernameOnlyMode && (
+      {usernameOnlyMode ? (
         <div className="alert alert-info text-center">
           <strong>Note:</strong> Please use your username to login.
+        </div>
+      ) : (
+        <div className="alert alert-info text-center">
+          <strong>Note:</strong> Log in with your Yardstik email address. <br></br>
+          Everyone shares the same password: <code className="wrap-anywhere">{SHARED_PASSWORD}</code>
         </div>
       )}
       <form onSubmit={handleLogin} className="form-card shadow bg-light">
@@ -271,7 +277,7 @@ const UserLogin = () => {
           {modalStep === 'forgotPassword' && (
             <form onSubmit={handleForgotPassword}>
               <div className="form-group">
-               <strong>Password: </strong><strong className="wrap-anywhere">yardstik-halloween-2026</strong>
+               <strong>Password: </strong><strong className="wrap-anywhere">{SHARED_PASSWORD}</strong>
                <br />
                <br />
                <strong>Stil Need help? <a href="https://docs.google.com/document/d/1FCoiD5cuKQNHtSxMSuhVY2fZSNi6zWZsqsmC0RniP5Q/edit?tab=t.0#heading=h.ub4fqn7itppp" target="_blank" rel="noreferrer">Instructions Doc</a></strong>
