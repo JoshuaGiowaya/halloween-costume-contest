@@ -1,48 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Modal, Button, Spinner } from 'react-bootstrap';
-import axios from 'axios';
+import useContestModes from '../hooks/useContestModes';
+import { SHARED_PASSWORD } from '../constants';
 
 const UserInstructions = () => {
   const [showModal, setShowModal] = useState(false);
-  const [fixedPasswordMode, setFixedPasswordMode] = useState(false);
-  const [usernameOnlyMode, setUsernameOnlyMode] = useState(false);
-  const [modeLoading, setModeLoading] = useState(true);
-
-  // Check authentication modes on component mount
-  useEffect(() => {
-    const checkModes = async () => {
-      try {
-        const [registrationModeResponse, usernameOnlyModeResponse] = await Promise.all([
-          axios.get(
-            `${process.env.REACT_APP_API_URL}/api/users/registration-mode`,
-            {
-              headers: {
-                'x-api-key': process.env.REACT_APP_API_KEY,
-              },
-            }
-          ),
-          axios.get(
-            `${process.env.REACT_APP_API_URL}/api/users/username-only-mode`,
-            {
-              headers: {
-                'x-api-key': process.env.REACT_APP_API_KEY,
-              },
-            }
-          )
-        ]);
-        setFixedPasswordMode(registrationModeResponse.data.fixedPasswordMode);
-        setUsernameOnlyMode(usernameOnlyModeResponse.data.usernameOnlyMode);
-      } catch (error) {
-        console.error('Failed to check modes:', error);
-        setFixedPasswordMode(false);
-        setUsernameOnlyMode(false);
-      } finally {
-        setModeLoading(false);
-      }
-    };
-
-    checkModes();
-  }, []);
+  const { fixedPasswordMode, usernameOnlyMode, allowlistMode, modeLoading } = useContestModes();
 
   const handleClose = () => setShowModal(false);
   const handleShow = () => setShowModal(true);
@@ -81,33 +44,42 @@ const UserInstructions = () => {
             <div className="alert alert-info">
               <strong>Current Configuration:</strong>
               <ul className="mb-0 mt-2">
+                {allowlistMode && <li>✅ Accounts are already made for every Yardstik employee</li>}
                 {usernameOnlyMode && <li>✅ Username-only authentication (no email required)</li>}
-                {fixedPasswordMode && <li>✅ Fixed password: <code className="wrap-anywhere">yardstik-halloween-2026</code></li>}
-                {!usernameOnlyMode && <li>📧 Email + Username required</li>}
+                {fixedPasswordMode && <li>✅ Shared password: <code className="wrap-anywhere">{SHARED_PASSWORD}</code></li>}
+                {!usernameOnlyMode && !allowlistMode && <li>📧 Email + Username required</li>}
                 {!fixedPasswordMode && <li>🔑 Custom password required</li>}
               </ul>
             </div>
           </div>
 
-          <div className="mb-4">
-            <h5 style={{ color: '#007bff' }}>📝 How to Register</h5>
-            <ol>
-              <li><strong>Username:</strong> Choose a unique username</li>
-              {!usernameOnlyMode && <li><strong>Email:</strong> Enter your email address</li>}
-              {!fixedPasswordMode && <li><strong>Password:</strong> Create a secure password</li>}
-              {fixedPasswordMode && <li><strong>Password:</strong> Will be automatically generated</li>}
-              <li>Click <strong>"Register"</strong> to create your account</li>
-            </ol>
-          </div>
+          {!allowlistMode && (
+            <div className="mb-4">
+              <h5 style={{ color: '#007bff' }}>📝 How to Register</h5>
+              <ol>
+                <li><strong>Username:</strong> Choose a unique username</li>
+                {!usernameOnlyMode && <li><strong>Email:</strong> Enter your email address</li>}
+                {!fixedPasswordMode && <li><strong>Password:</strong> Create a secure password</li>}
+                {fixedPasswordMode && <li><strong>Password:</strong> Will be automatically generated</li>}
+                <li>Click <strong>"Register"</strong> to create your account</li>
+              </ol>
+            </div>
+          )}
 
           <div className="mb-4">
             <h5 style={{ color: '#007bff' }}>🔑 How to Login</h5>
             <ol>
-              <li><strong>Username:</strong> Enter your registered username</li>
-              {!usernameOnlyMode && <li><strong>Email:</strong> Enter your registered email</li>}
-              <li><strong>Password:</strong> 
+              {allowlistMode ? (
+                <li><strong>Email:</strong> Enter your Yardstik email address</li>
+              ) : (
+                <>
+                  <li><strong>Username:</strong> Enter your registered username</li>
+                  {!usernameOnlyMode && <li><strong>Email:</strong> Enter your registered email</li>}
+                </>
+              )}
+              <li><strong>Password:</strong>
                 {fixedPasswordMode ? (
-                  <> Enter <code className="wrap-anywhere">yardstik-halloween-2026</code></>
+                  <> Enter <code className="wrap-anywhere">{SHARED_PASSWORD}</code></>
                 ) : (
                   <> Enter your custom password</>
                 )}
@@ -132,7 +104,7 @@ const UserInstructions = () => {
           <div className="mb-4">
             <h5 style={{ color: '#007bff' }}>💡 Tips for Success</h5>
             <ul>
-              <li><strong>Register Early:</strong> Create your account before voting begins</li>
+              {!allowlistMode && <li><strong>Register Early:</strong> Create your account before voting begins</li>}
               <li><strong>Test Login:</strong> Make sure you can log in successfully</li>
               <li><strong>Bookmark Site:</strong> Save the contest URL for easy access</li>
               <li><strong>Vote Responsibly:</strong> You may have limited votes</li>
@@ -144,20 +116,36 @@ const UserInstructions = () => {
             <h5 style={{ color: '#007bff' }}>❓ Need Help?</h5>
             <div className="alert alert-light">
               <ul className="mb-0">
-                <li><strong>Can't Register?</strong> Try a different username</li>
-                <li><strong>Can't Login?</strong> Check your username and password</li>
+                {allowlistMode ? (
+                  <li><strong>Can't Login?</strong> Use your full Yardstik email address, exactly as it appears in Slack</li>
+                ) : (
+                  <>
+                    <li><strong>Can't Register?</strong> Try a different username</li>
+                    <li><strong>Can't Login?</strong> Check your username and password</li>
+                  </>
+                )}
                 <li><strong>Can't Vote?</strong> Make sure voting is open (Thursday morning)</li>
                 <li><strong>Still Stuck?</strong> Contact contest organizers</li>
               </ul>
             </div>
           </div>
 
-          {usernameOnlyMode && fixedPasswordMode && (
+          {allowlistMode && (
+            <div className="alert alert-success">
+              <h6><strong>🎉 Quick Start Summary:</strong></h6>
+              <p className="mb-2">
+                <strong>1. Login:</strong> Your Yardstik email + <code className="wrap-anywhere">{SHARED_PASSWORD}</code><br/>
+                <strong>2. Vote:</strong> Thursday morning onwards
+              </p>
+            </div>
+          )}
+
+          {!allowlistMode && usernameOnlyMode && fixedPasswordMode && (
             <div className="alert alert-success">
               <h6><strong>🎉 Quick Start Summary:</strong></h6>
               <p className="mb-2">
                 <strong>1. Register:</strong> Username only<br/>
-                <strong>2. Login:</strong> Username + <code className="wrap-anywhere">yardstik-halloween-2026</code><br/>
+                <strong>2. Login:</strong> Username + <code className="wrap-anywhere">{SHARED_PASSWORD}</code><br/>
                 <strong>3. Vote:</strong> Thursday morning onwards
               </p>
             </div>

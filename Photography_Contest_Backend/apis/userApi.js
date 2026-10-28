@@ -3,6 +3,7 @@ const User = require('../models/User');
 const { validationResult } = require('express-validator');
 const nodemailer = require('nodemailer');
 const bcrypt = require('bcryptjs');
+const allowlist = require('../utils/allowlist');
 require('dotenv').config();
 
 const generateToken = (id) => {
@@ -20,15 +21,22 @@ const registerUser = async (req, res) => {
 
   const { username, email, password } = req.body;
   const usernameOnlyMode = process.env.USERNAME_ONLY === 'true';
-  console.log('username', username);
-  console.log('email', email);
-  console.log('password', password);
-  console.log('usernameOnlyMode', usernameOnlyMode);
 
   try {
+    // Use fixed password if environment variable is set, otherwise use provided password
+    const userPassword = process.env.FIXED_USER_PASSWORD || password;
+
+    // Every employee on the roster is seeded by seedContestants.js before the
+    // contest, so there is nothing to register. Anyone off the roster should
+    // not get an account at all.
+    if (allowlist.isEnabled()) {
+      return res.status(403).json({
+        message: 'No sign-up needed - your account already exists. Just log in with your Yardstik email.',
+      });
+    }
+
     // Generate email address in format {username}@gmail.com
     const generatedEmail = `${username}@gmail.com`;
-    console.log('Generated email:', generatedEmail);
 
     // Check if user exists by username (since we always generate email from username)
     const userExists = await User.findOne({ username });
@@ -36,10 +44,6 @@ const registerUser = async (req, res) => {
     if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
     }
-
-    // Use fixed password if environment variable is set, otherwise use provided password
-    const userPassword = process.env.FIXED_USER_PASSWORD || password;
-    console.log('Using password:', process.env.FIXED_USER_PASSWORD ? 'Fixed password from env' : 'Provided password');
 
     // Create user object based on mode
     const userData = {
@@ -56,7 +60,7 @@ const registerUser = async (req, res) => {
         username: user.username,
         email: user.email, // Always include the generated email
       };
-      
+
       res.status(200).json(responseData);
     } else {
       res.status(400).json({ message: 'Invalid user data' });
@@ -74,28 +78,16 @@ const authUser = async (req, res) => {
   }
 
   const { username, email, password } = req.body;
-  const usernameOnlyMode = process.env.USERNAME_ONLY === 'true';
-  console.log('username', username);
-  console.log('email', email);
-  console.log('password', password);
-  console.log('usernameOnlyMode', usernameOnlyMode);
 
   try {
-    // Generate email address in format {username}@gmail.com for login
-    const generatedEmail = `${username}@gmail.com`;
-    console.log('Generated email for login:', generatedEmail);
-    
-    // Find user by username (since we always generate email from username)
-    const user = await User.findOne({ username });
-    
-    console.log('user', user);
-    console.log('user.matchPassword(password)', user && (await user.matchPassword(password)));
+    // Contestants are identified by their Yardstik address; everyone else
+    // still logs in by username against the generated {username}@gmail.com.
+    const user = allowlist.isEnabled()
+      ? await User.findOne({ email: allowlist.normalizeEmail(email) })
+      : await User.findOne({ username });
 
     if (user && (await user.matchPassword(password))) {
-      console.log('user and password match');
-      console.log('process.env.NODE_ENV', process.env.NODE_ENV);
       const token = generateToken(user._id);
-      console.log('token', token);
       user.token = token;
       
       await user.save();
@@ -116,7 +108,11 @@ const authUser = async (req, res) => {
 
       res.json(responseData);
     } else {
-      res.status(401).json({ message: 'Invalid username or password' });
+      res.status(401).json({
+        message: allowlist.isEnabled()
+          ? 'Invalid email or password'
+          : 'Invalid username or password',
+      });
     }
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -334,8 +330,11 @@ const validateToken = async (req, res) => {
 const getRegistrationMode = async (req, res) => {
   try {
     const fixedPasswordMode = !!process.env.FIXED_USER_PASSWORD;
-    res.status(200).json({ 
+    res.status(200).json({
       fixedPasswordMode,
+      // When on, the form collects only an email - the display name comes
+      // from the employee roster.
+      allowlistMode: allowlist.isEnabled(),
       message: fixedPasswordMode ? 'Fixed password mode enabled' : 'Normal password mode enabled'
     });
   } catch (error) {
@@ -345,8 +344,11 @@ const getRegistrationMode = async (req, res) => {
 
 const getUsernameOnlyMode = async (req, res) => {
   try {
-    const usernameOnlyMode = process.env.USERNAME_ONLY === 'true';
-    res.status(200).json({ 
+    // The allowlist identifies contestants by email, so it overrides
+    // username-only. Report the mode actually in effect, otherwise the login
+    // form would ask for a username the validator then rejects.
+    const usernameOnlyMode = process.env.USERNAME_ONLY === 'true' && !allowlist.isEnabled();
+    res.status(200).json({
       usernameOnlyMode,
       message: usernameOnlyMode ? 'Username-only mode enabled' : 'Username+email mode enabled'
     });

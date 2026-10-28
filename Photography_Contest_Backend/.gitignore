@@ -5,3 +5,6 @@ node_modules/
 *.log
 .env
 .env.development
+
+# Employee roster - never commit, this repo is public
+allowed-employees.csv

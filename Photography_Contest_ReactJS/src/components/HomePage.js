@@ -1,16 +1,20 @@
 import React, { useContext } from 'react';
 import { UserAuthContext } from '../context/UserAuthContext';
 import { AdminAuthContext } from '../context/AdminAuthContext';
+import useContestModes from '../hooks/useContestModes';
 
 const HomePage = () => {
     const { user } = useContext(UserAuthContext);
     const { admin } = useContext(AdminAuthContext);
+    const { allowlistMode } = useContestModes();
 
     const getWelcomeMessage = () => {
         if (admin) {
             return `Welcome, ${admin.username}!`;
         } else if (user) {
             return `Welcome, ${user.username}!`;
+        } else if (allowlistMode) {
+            return 'Log in with your Yardstik email to participate';
         } else {
             return 'Please Register or Login to participate';
         }

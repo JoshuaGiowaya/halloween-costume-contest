@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Spinner } from 'react-bootstrap';
+import { SHARED_PASSWORD } from '../constants';
+import useContestModes from '../hooks/useContestModes';
 
 const RegisterPage = () => {
   const [username, setUsername] = useState('');
@@ -10,47 +12,8 @@ const RegisterPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [fixedPasswordMode, setFixedPasswordMode] = useState(false);
-  const [usernameOnlyMode, setUsernameOnlyMode] = useState(false);
-  const [modeLoading, setModeLoading] = useState(true);
+  const { fixedPasswordMode, usernameOnlyMode, allowlistMode, modeLoading } = useContestModes();
   const navigate = useNavigate();
-
-  // Check registration modes on component mount
-  useEffect(() => {
-    const checkModes = async () => {
-      try {
-        const [registrationModeResponse, usernameOnlyModeResponse] = await Promise.all([
-          axios.get(
-            `${process.env.REACT_APP_API_URL}/api/users/registration-mode`,
-            {
-              headers: {
-                'x-api-key': process.env.REACT_APP_API_KEY,
-              },
-            }
-          ),
-          axios.get(
-            `${process.env.REACT_APP_API_URL}/api/users/username-only-mode`,
-            {
-              headers: {
-                'x-api-key': process.env.REACT_APP_API_KEY,
-              },
-            }
-          )
-        ]);
-        setFixedPasswordMode(registrationModeResponse.data.fixedPasswordMode);
-        setUsernameOnlyMode(usernameOnlyModeResponse.data.usernameOnlyMode);
-      } catch (error) {
-        console.error('Failed to check modes:', error);
-        // Default to normal modes if check fails
-        setFixedPasswordMode(false);
-        setUsernameOnlyMode(false);
-      } finally {
-        setModeLoading(false);
-      }
-    };
-
-    checkModes();
-  }, []);
 
   const submitHandler = async (e) => {
     e.preventDefault();
@@ -69,12 +32,12 @@ const RegisterPage = () => {
     try {
       // Prepare registration data based on mode
       const registrationData = { username };
-      
+
       // Only include email if not in username-only mode
       if (!usernameOnlyMode) {
         registrationData.email = email;
       }
-      
+
       // Include password based on mode
       if (fixedPasswordMode) {
         // Send the fixed password from environment
@@ -123,6 +86,28 @@ const RegisterPage = () => {
     );
   }
 
+  // Everyone on the employee roster already has an account, so there is
+  // nothing to sign up for - point them at the login page instead.
+  if (allowlistMode) {
+    return (
+      <div className="mt-4">
+        <h2 className="text-center" style={{ color: '#007bff' }}>No Sign-Up Needed</h2>
+        <div className="form-card shadow bg-light text-center">
+          <p>Your account is already set up. Just log in:</p>
+          <p className="mb-1"><strong>Email:</strong> your Yardstik address</p>
+          <p><strong>Password:</strong> <code className="wrap-anywhere">{SHARED_PASSWORD}</code></p>
+          <Link
+            to="/login"
+            className="btn btn-primary justify-content-center mt-4"
+            style={{ fontWeight: 'bold' }}
+          >
+            Go to Login
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mt-4">
       <h2 className="text-center" style={{ color: '#007bff' }}>Register</h2>
@@ -134,7 +119,7 @@ const RegisterPage = () => {
       )}
       {usernameOnlyMode && (
         <div className="alert alert-info text-center">
-          <strong>Note:</strong> You only need to provide a username for registration. <br></br>Please do not use spaces in your username. You can use underscores or hyphens instead. 
+          <strong>Note:</strong> You only need to provide a username for registration. <br></br>Please do not use spaces in your username. You can use underscores or hyphens instead.
           <br></br>If you want your username to explain your costume you can format it as play-on-words, or play_on_words.
         </div>
       )}
