@@ -26,9 +26,9 @@ const registerUser = async (req, res) => {
     // Use fixed password if environment variable is set, otherwise use provided password
     const userPassword = process.env.FIXED_USER_PASSWORD || password;
 
-    // Every employee on the roster is seeded by seedContestants.js before the
-    // contest, so there is nothing to register. Anyone off the roster should
-    // not get an account at all.
+    // Every employee on the roster has an account loaded into the database
+    // before the contest, so there is nothing to register. Anyone off the
+    // roster should not get an account at all.
     if (allowlist.isEnabled()) {
       return res.status(403).json({
         message: 'No sign-up needed - your account already exists. Just log in with your Yardstik email.',
