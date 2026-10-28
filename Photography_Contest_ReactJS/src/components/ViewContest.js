@@ -79,7 +79,7 @@ const ViewContests = () => {
         email: '',
         photo_url: ''
     });
-    const [modalMode, setModalMode] = useState('join'); // 'join' for a first entry, 'replace' to swap the photo
+    const [modalMode, setModalMode] = useState('join'); // 'join' for a first entry, 'edit' to change an existing one
     const [userPhotos, setUserPhotos] = useState([]);
     const [viewingPastContest, setViewingPastContest] = useState(false);
     const [loading, setLoading] = useState(true); // Add loading state
@@ -223,17 +223,19 @@ const ViewContests = () => {
         userPhotos.find(photo => photo.contest_title === contestTitle && photo.email === loggedInUser)
     );
 
-    const openModal = (mode, contest, photoUrl = '') => {
+    // Join starts from the account's name and a blank description; Edit starts
+    // from what the entry currently says.
+    const openModal = (mode, contest, entry = null) => {
         setModalMode(mode);
         setModalData({
             contest_title: contest.title,
-            // Prefilled from the account but editable, so someone can enter the
-            // name they want on the board - and so a phone that lost its session
-            // still lets them type one instead of showing a blank locked field.
-            uploaded_by: loggedInUsername || '',
-            description: '',
+            // Prefilled but editable, so someone can enter the name they want on
+            // the board - and so a phone that lost its session still lets them
+            // type one instead of showing a blank locked field.
+            uploaded_by: (entry ? entry.uploaded_by : loggedInUsername) || '',
+            description: (entry && entry.description) || '',
             email: loggedInUser || '',
-            photo_url: photoUrl
+            photo_url: entry ? entry.photo_url : ''
         });
         setFile(null);
         setFileError('');
@@ -253,14 +255,13 @@ const ViewContests = () => {
         openModal('join', contest);
     };
 
-    const handleReplaceClick = (contest) => {
+    const handleEditClick = (contest) => {
         const existingPhoto = entryFor(contest.title);
         if (!existingPhoto) {
             alert("You haven't entered this contest yet.");
             return;
         }
-        // Carry the current photo in so the modal can show what's being replaced.
-        openModal('replace', contest, existingPhoto.photo_url);
+        openModal('edit', contest, existingPhoto);
     };
 
     const handleModalChange = (e) => {
@@ -293,10 +294,9 @@ const ViewContests = () => {
         e.preventDefault();
         setSubmitError('');
 
-        const replacing = modalMode === 'replace';
+        const editing = modalMode === 'edit';
 
-        // Replace only swaps the photo, so it has no name field to check.
-        if (!replacing && !modalData.uploaded_by.trim()) {
+        if (!modalData.uploaded_by.trim()) {
             setSubmitError('Please enter the name to show on your submission.');
             return;
         }
@@ -306,39 +306,45 @@ const ViewContests = () => {
             return;
         }
 
-        if (!file) {
+        // An edit keeps the current photo unless a new one is chosen.
+        if (!file && !editing) {
             setSubmitError('Please choose a photo of your costume.');
             return;
         }
 
         // Convert HEIC, apply EXIF rotation and resize before upload, so the
         // stored photo displays correctly in every browser.
-        let upload;
-        setPreparing(true);
-        try {
-            upload = await prepareImage(file);
-        } catch (error) {
-            console.error('There was an error preparing the photo!', error);
-            setFileError(error.message || 'We could not read that photo. Please try another one.');
+        let upload = null;
+        if (file) {
+            setPreparing(true);
+            try {
+                upload = await prepareImage(file);
+            } catch (error) {
+                console.error('There was an error preparing the photo!', error);
+                setFileError(error.message || 'We could not read that photo. Please try another one.');
+                setPreparing(false);
+                return;
+            }
             setPreparing(false);
-            return;
         }
-        setPreparing(false);
 
         setSubmitting(true);
         try {
-            const formData = new FormData();
-            formData.append('image', upload);
-            formData.append('key', '10fc3bdb39131e1d5f242cbb5d183090'); // Replace with your imgbb API key
+            let imgUrl = null;
+            if (upload) {
+                const formData = new FormData();
+                formData.append('image', upload);
+                formData.append('key', '10fc3bdb39131e1d5f242cbb5d183090'); // Replace with your imgbb API key
 
-            const imgbbResponse = await axios.post('https://api.imgbb.com/1/upload', formData);
-            const imgUrl = imgbbResponse.data
-                && imgbbResponse.data.data
-                && imgbbResponse.data.data.url;
+                const imgbbResponse = await axios.post('https://api.imgbb.com/1/upload', formData);
+                imgUrl = imgbbResponse.data
+                    && imgbbResponse.data.data
+                    && imgbbResponse.data.data.url;
 
-            if (!imgUrl) {
-                setSubmitError('The photo service did not accept that image. Please try another photo.');
-                return;
+                if (!imgUrl) {
+                    setSubmitError('The photo service did not accept that image. Please try another photo.');
+                    return;
+                }
             }
 
             const requestOptions = {
@@ -348,28 +354,34 @@ const ViewContests = () => {
                 withCredentials: true,
             };
 
-            if (replacing) {
-                // The entry already exists, so swap its photo in place.
-                await axios.put(`${process.env.REACT_APP_API_URL}/api/photos/update`, {
-                    contest_title: modalData.contest_title,
-                    email: modalData.email,
-                    photo_url: imgUrl
+            const entry = {
+                contest_title: modalData.contest_title,
+                email: modalData.email,
+                uploaded_by: modalData.uploaded_by.trim(),
+                description: modalData.description.trim(),
+            };
+
+            if (editing) {
+                const response = await axios.put(`${process.env.REACT_APP_API_URL}/api/photos/update`, {
+                    ...entry,
+                    // Left out when no new photo was chosen, so the server keeps
+                    // the current one.
+                    ...(imgUrl ? { photo_url: imgUrl } : {})
                 }, requestOptions);
 
+                const updated = response.data.updatedPhoto;
                 setUserPhotos(userPhotos.map(photo => (
                     photo.contest_title === modalData.contest_title && photo.email === modalData.email
-                        ? { ...photo, photo_url: imgUrl }
+                        ? updated
                         : photo
                 )));
                 setShowModal(false);
-                alert('Your photo has been replaced.');
+                alert('Your submission has been updated.');
                 return;
             }
 
             const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/photos/insert`, {
-                ...modalData,
-                uploaded_by: modalData.uploaded_by.trim(),
-                description: modalData.description.trim(),
+                ...entry,
                 photo_url: imgUrl
             }, requestOptions);
 
@@ -378,8 +390,8 @@ const ViewContests = () => {
             alert('Your costume has been submitted. Good luck!');
         } catch (error) {
             console.error('There was an error submitting the photo!', error);
-            setSubmitError(serverMessage(error, replacing
-                ? 'We could not replace your photo. Please check your connection and try again.'
+            setSubmitError(serverMessage(error, editing
+                ? 'We could not save your changes. Please check your connection and try again.'
                 : 'We could not submit your costume. Please check your connection and try again.'));
         } finally {
             setSubmitting(false);
@@ -392,7 +404,7 @@ const ViewContests = () => {
         setFilter("ongoing"); // Reset filter to show ongoing contests
     };
 
-    // Join for a first entry, Replace once this user already has a photo in.
+    // Join for a first entry, Edit once this user already has one in.
     const renderEntryButton = (contest) => {
         if (contest.voting_open && disableJoinWhenVotingStarts) {
             return <Button variant="secondary" disabled>Submissions Closed - Voting Started</Button>;
@@ -403,12 +415,13 @@ const ViewContests = () => {
         }
 
         // Votes are recorded against a photo_url, so swapping the photo once
-        // voting is open would strand the votes already cast on the old one.
+        // voting is open would strand the votes already cast on the old one -
+        // and entries shouldn't change under voters mid-vote either.
         if (contest.voting_open) {
-            return <Button variant="secondary" disabled>Voting Started - Photo Locked</Button>;
+            return <Button variant="secondary" disabled>Voting Started - Entry Locked</Button>;
         }
 
-        return <Button variant="warning" onClick={() => handleReplaceClick(contest)}>Replace Photo</Button>;
+        return <Button variant="warning" onClick={() => handleEditClick(contest)}>Edit Submission</Button>;
     };
 
     const renderContests = (contests, isPast) => (
@@ -531,7 +544,7 @@ const ViewContests = () => {
                 {/* The contest name goes in the body, not the title: a long one
                     runs into the close button up here. */}
                 <Modal.Header closeButton>
-                    <Modal.Title>{modalMode === 'replace' ? 'Replace your photo' : 'Submit your costume'}</Modal.Title>
+                    <Modal.Title>{modalMode === 'edit' ? 'Edit your submission' : 'Submit your costume'}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     {/* .submit-form keeps every control at least a thumb tall and
@@ -539,49 +552,42 @@ const ViewContests = () => {
                         the moment a field takes focus. */}
                     <Form onSubmit={handleSubmit} className="submit-form" noValidate>
                         <p className="text-muted wrap-anywhere mb-3">{modalData.contest_title}</p>
-                        {/* /photos/update only swaps photo_url, so Replace leaves the
-                            name and description off rather than offering edits it
-                            would silently drop. */}
-                        {modalMode !== 'replace' && (
-                            <>
-                                <Form.Group controlId="formUploadedBy">
-                                    <Form.Label>Your name</Form.Label>
-                                    <Form.Control
-                                        type="text"
-                                        name="uploaded_by"
-                                        value={modalData.uploaded_by}
-                                        onChange={handleModalChange}
-                                        placeholder="The name to show on your costume"
-                                        autoComplete="name"
-                                        autoCapitalize="words"
-                                        enterKeyHint="next"
-                                        maxLength={80}
-                                        disabled={preparing || submitting}
-                                    />
-                                </Form.Group>
-                                <Form.Group controlId="formDescription" className="mt-3">
-                                    <Form.Label>Describe your costume</Form.Label>
-                                    <Form.Control
-                                        as="textarea"
-                                        rows={3}
-                                        name="description"
-                                        value={modalData.description}
-                                        onChange={handleModalChange}
-                                        placeholder="Who or what are you dressed as?"
-                                        autoCapitalize="sentences"
-                                        enterKeyHint="done"
-                                        maxLength={500}
-                                        disabled={preparing || submitting}
-                                    />
-                                    <Form.Text className="text-muted d-block">
-                                        Optional &middot; up to 500 characters.
-                                    </Form.Text>
-                                </Form.Group>
-                            </>
-                        )}
-                        {modalMode === 'replace' && modalData.photo_url && (
-                            <Form.Group>
-                                <Form.Label>Current Photo</Form.Label>
+                        <Form.Group controlId="formUploadedBy">
+                            <Form.Label>Your name</Form.Label>
+                            <Form.Control
+                                type="text"
+                                name="uploaded_by"
+                                value={modalData.uploaded_by}
+                                onChange={handleModalChange}
+                                placeholder="The name to show on your costume"
+                                autoComplete="name"
+                                autoCapitalize="words"
+                                enterKeyHint="next"
+                                maxLength={80}
+                                disabled={preparing || submitting}
+                            />
+                        </Form.Group>
+                        <Form.Group controlId="formDescription" className="mt-3">
+                            <Form.Label>Describe your costume</Form.Label>
+                            <Form.Control
+                                as="textarea"
+                                rows={3}
+                                name="description"
+                                value={modalData.description}
+                                onChange={handleModalChange}
+                                placeholder="Who or what are you dressed as?"
+                                autoCapitalize="sentences"
+                                enterKeyHint="done"
+                                maxLength={500}
+                                disabled={preparing || submitting}
+                            />
+                            <Form.Text className="text-muted d-block">
+                                Optional &middot; up to 500 characters.
+                            </Form.Text>
+                        </Form.Group>
+                        {modalMode === 'edit' && modalData.photo_url && (
+                            <Form.Group className="mt-3">
+                                <Form.Label>Current photo</Form.Label>
                                 <img
                                     src={modalData.photo_url}
                                     alt="Your current entry"
@@ -590,7 +596,7 @@ const ViewContests = () => {
                             </Form.Group>
                         )}
                         <Form.Group controlId="formPhotoFile" className="mt-3">
-                            <Form.Label>{modalMode === 'replace' ? 'New costume photo' : 'Costume photo'}</Form.Label>
+                            <Form.Label>{modalMode === 'edit' ? 'New photo (optional)' : 'Costume photo'}</Form.Label>
                             {/* image/* is what makes iOS offer both Take Photo and Photo Library;
                                 the explicit extensions cover browsers that don't match HEIC to it. */}
                             <Form.Control
@@ -600,6 +606,7 @@ const ViewContests = () => {
                                 disabled={preparing || submitting}
                             />
                             <Form.Text className="text-muted d-block">
+                                {modalMode === 'edit' && 'Leave empty to keep your current photo. '}
                                 JPG, PNG, WEBP, AVIF, HEIC or HEIF &middot; up to {MAX_UPLOAD_MB} MB.
                                 Large photos are resized automatically.
                             </Form.Text>
@@ -617,8 +624,8 @@ const ViewContests = () => {
                             {preparing
                                 ? 'Preparing photo…'
                                 : submitting
-                                    ? 'Submitting…'
-                                    : (modalMode === 'replace' ? 'Replace photo' : 'Submit costume')}
+                                    ? (modalMode === 'edit' ? 'Saving…' : 'Submitting…')
+                                    : (modalMode === 'edit' ? 'Save changes' : 'Submit costume')}
                         </Button>
                     </Form>
                 </Modal.Body>
