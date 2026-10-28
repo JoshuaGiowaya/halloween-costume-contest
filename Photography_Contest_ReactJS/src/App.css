@@ -79,27 +79,33 @@ img {
   padding-top: env(safe-area-inset-top);
 }
 
-/* The brand stays on one line and truncates instead of pushing the toggler
-   off-screen or wrapping into a second row. */
+/* There is no toggle button, so the links are always on show. They take the
+   width they need and the brand truncates into whatever is left, rather than
+   the brand pushing them off the side of the screen. */
 .navbar-brand {
   font-size: 1rem;
-  max-width: calc(100vw - 5.5rem);
+  flex: 0 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* An open mobile menu scrolls rather than running off the bottom of a short
-   screen in landscape. */
-.navbar-collapse {
-  max-height: calc(100vh - var(--nav-height) - 1rem);
-  overflow-y: auto;
+.navbar .navbar-nav {
+  flex-shrink: 0;
 }
 
 .navbar .nav-link {
   min-height: var(--tap-target);
   display: flex;
   align-items: center;
+  padding-inline: 0.5rem;
+}
+
+/* Sized in em so the glyph tracks the link's own font size. */
+.nav-icon {
+  width: 1.25em;
+  height: 1.25em;
 }
 
 /* --------------------------------------------------------------- cards */
@@ -300,11 +306,9 @@ button,
 
   .navbar-brand {
     font-size: 1.25rem;
-    max-width: none;
   }
 
-  .navbar-collapse {
-    max-height: none;
-    overflow-y: visible;
+  .navbar .nav-link {
+    padding-inline: 0.75rem;
   }
 }
