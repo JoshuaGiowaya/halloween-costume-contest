@@ -3,18 +3,29 @@
   <head>
     <meta charset="utf-8" />
     <link rel="icon" href="./favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#ff4b2b" />
     <meta
       name="description"
-      content="Web site created using create-react-app"
+      content="Yardstik Halloween costume contest 2026 - register, submit your costume, and vote for your favorite."
     />
     <link rel="apple-touch-icon" href="./logo192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
     <!--
       manifest.json provides metadata used when your web app is installed on a
       user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
     -->
     <link rel="manifest" href="./manifest.json" />
+    <!--
+      Raleway is loaded once here rather than via a per-component @import so the
+      font request starts with the document instead of after the bundle runs.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&display=swap"
+      rel="stylesheet"
+    />
     <!--
       Notice the use of %PUBLIC_URL% in the tags above.
       It will be replaced with the URL of the `public` folder during the build.
@@ -24,7 +35,7 @@
       work correctly both with client-side routing and a non-root public URL.
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
-    <title>React App</title>
+    <title>Yardstik Halloween Costume Contest 2026</title>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

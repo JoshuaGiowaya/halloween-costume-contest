@@ -39,30 +39,36 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="container">
-      <h2>Admin Login</h2>
-      <form onSubmit={handleLogin}>
+    <div className="mt-4">
+      <h2 className="text-center" style={{ color: '#007bff' }}>Admin Login</h2>
+      <form onSubmit={handleLogin} className="form-card shadow bg-light">
         <div className="form-group">
-          <label>Email:</label>
+          <label htmlFor="admin-email">Email:</label>
           <input
+            id="admin-email"
             type="email"
             className="form-control"
+            autoComplete="email"
+            autoCapitalize="none"
+            autoCorrect="off"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
         </div>
-        <div className="form-group">
-          <label>Password:</label>
+        <div className="form-group mt-3">
+          <label htmlFor="admin-password">Password:</label>
           <input
+            id="admin-password"
             type="password"
             className="form-control"
+            autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
           />
         </div>
-        <button type="submit" className="btn btn-primary">
+        <button type="submit" className="btn btn-primary mt-4" style={{ fontWeight: 'bold' }}>
           {loading ? <Spinner animation="border" size="sm" /> : 'Login'}
         </button>
       </form>

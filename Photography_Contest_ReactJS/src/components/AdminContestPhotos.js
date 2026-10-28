@@ -71,9 +71,9 @@ const AdminContestPhotos = ({ contest, show, onHide }) => {
     };
 
     return (
-        <Modal show={show} onHide={onHide}>
+        <Modal show={show} onHide={onHide} fullscreen="md-down" size="lg" scrollable>
             <Modal.Header closeButton>
-                <Modal.Title>Photos for Contest: {contest.title}</Modal.Title>
+                <Modal.Title className="wrap-anywhere fs-5">Photos for Contest: {contest.title}</Modal.Title>
             </Modal.Header>
             <Modal.Body>
                 {loadingPhotos ? (
@@ -88,11 +88,11 @@ const AdminContestPhotos = ({ contest, show, onHide }) => {
                         {photos.length > 0 ? (
                             <div className="row">
                                 {photos.map(photo => (
-                                    <div className="col-md-4 mb-4" key={photo._id}>
+                                    <div className="col-12 col-sm-6 col-lg-4 mb-4" key={photo._id}>
                                         <div className="card">
-                                            <img src={photo.photo_url} className="card-img-top" alt="Contest Photo" />
+                                            <img src={photo.photo_url} className="card-img-top photo-thumb" alt={`Costume submitted by ${photo.uploaded_by}`} />
                                             <div className="card-body">
-                                                <p>Uploaded by: {photo.uploaded_by}</p>
+                                                <p className="wrap-anywhere">Uploaded by: {photo.uploaded_by}</p>
                                                 {loadingDelete ? (
                                                     <div className="text-center">
                                                         <Spinner animation="border" size="sm" role="status" className="mb-2">
@@ -101,7 +101,7 @@ const AdminContestPhotos = ({ contest, show, onHide }) => {
                                                         <div>Deleting...</div>
                                                     </div>
                                                 ) : (
-                                                    <Button variant="danger" onClick={() => handleDeletePhoto(photo)}>
+                                                    <Button variant="danger" className="w-100" onClick={() => handleDeletePhoto(photo)}>
                                                         Delete
                                                     </Button>
                                                 )}

@@ -67,20 +67,22 @@ const UserInstructions = () => {
         📖 How to Participate
       </Button>
 
-      <Modal show={showModal} onHide={handleClose} size="lg">
+      {/* `scrollable` keeps the header and footer pinned while the guide itself
+          scrolls, which matters most on a phone where it is full screen. */}
+      <Modal show={showModal} onHide={handleClose} size="lg" fullscreen="md-down" scrollable>
         <Modal.Header closeButton>
-          <Modal.Title style={{ color: '#007bff', fontWeight: 'bold' }}>
+          <Modal.Title className="fs-5" style={{ color: '#007bff', fontWeight: 'bold' }}>
             🎯 Contest Participation Guide
           </Modal.Title>
         </Modal.Header>
-        <Modal.Body style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+        <Modal.Body>
           <div className="mb-4">
             <h5 style={{ color: '#007bff' }}>🔐 Authentication Setup</h5>
             <div className="alert alert-info">
               <strong>Current Configuration:</strong>
               <ul className="mb-0 mt-2">
                 {usernameOnlyMode && <li>✅ Username-only authentication (no email required)</li>}
-                {fixedPasswordMode && <li>✅ Fixed password: <code>yardstik-halloween-2025</code></li>}
+                {fixedPasswordMode && <li>✅ Fixed password: <code className="wrap-anywhere">yardstik-halloween-2026</code></li>}
                 {!usernameOnlyMode && <li>📧 Email + Username required</li>}
                 {!fixedPasswordMode && <li>🔑 Custom password required</li>}
               </ul>
@@ -105,7 +107,7 @@ const UserInstructions = () => {
               {!usernameOnlyMode && <li><strong>Email:</strong> Enter your registered email</li>}
               <li><strong>Password:</strong> 
                 {fixedPasswordMode ? (
-                  <> Enter <code>yardstik-halloween-2025</code></>
+                  <> Enter <code className="wrap-anywhere">yardstik-halloween-2026</code></>
                 ) : (
                   <> Enter your custom password</>
                 )}
@@ -155,7 +157,7 @@ const UserInstructions = () => {
               <h6><strong>🎉 Quick Start Summary:</strong></h6>
               <p className="mb-2">
                 <strong>1. Register:</strong> Username only<br/>
-                <strong>2. Login:</strong> Username + <code>yardstik-halloween-2025</code><br/>
+                <strong>2. Login:</strong> Username + <code className="wrap-anywhere">yardstik-halloween-2026</code><br/>
                 <strong>3. Vote:</strong> Thursday morning onwards
               </p>
             </div>

@@ -263,7 +263,7 @@ const AdminDashboard = () => {
     // Show loading spinner while checking manual control mode
     if (modeLoading) {
         return (
-            <div className="container mt-5 text-center">
+            <div className="mt-4 text-center">
                 <div className="spinner-border" role="status">
                     <span className="sr-only">Loading...</span>
                 </div>
@@ -273,74 +273,28 @@ const AdminDashboard = () => {
     }
 
     return (
-        <div className="container">
+        <div>
             <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=Raleway:wght@100;400;700&display=swap');
-
-                body {
-                    font-family: 'Raleway', sans-serif;
-                }
-
-                .container {
-                    padding-top: 20px;
-                }
-
-                .card {
-                    border: 1px solid #ddd;
-                    border-radius: 10px;
-                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                }
-
-                .card-title {
-                    font-size: 1.25rem;
+                .admin-card .card-title {
+                    font-size: 1.15rem;
                     font-weight: 700;
                 }
 
-                .card-text {
+                .admin-card .card-text {
                     font-size: 0.9rem;
                 }
 
-                .form-group {
-                    margin-bottom: 1rem;
-                }
-
-                .btn {
-                    margin-right: 0.5rem;
-                }
-
-                .btn-primary {
-                    background-color: #007bff;
-                    border-color: #007bff;
-                }
-
-                .btn-warning {
-                    background-color: #ffc107;
-                    border-color: #ffc107;
-                }
-
-                .btn-danger {
-                    background-color: #dc3545;
-                    border-color: #dc3545;
-                }
-                
                 .contest-controls {
                     border-top: 1px solid #dee2e6;
-                    padding-top: 10px;
-                    margin-top: 10px;
+                    padding-top: 0.75rem;
+                    margin-top: 0.75rem;
                 }
-                
-                .voting-controls {
-                    margin-bottom: 8px;
-                }
-                
-                .manual-controls {
-                    border-left: 3px solid #17a2b8;
-                    padding-left: 10px;
-                    background-color: #f8f9fa;
-                    border-radius: 4px;
+
+                .voting-controls + .voting-controls {
+                    margin-top: 0.75rem;
                 }
             `}</style>
-            <h2 className="text-center mt-4">Admin Dashboard</h2>
+            <h2 className="text-center mt-2">Admin Dashboard</h2>
             
             {manualControlMode && (
                 <div className="alert alert-info mb-3">
@@ -355,18 +309,20 @@ const AdminDashboard = () => {
             )}
 
             <h3 className="mt-4">Create Contest</h3>
-            <Button variant="primary" onClick={() => setShowCreateModal(true)}>
-                Create Contest
-            </Button>
+            <div className="action-row">
+                <Button variant="primary" onClick={() => setShowCreateModal(true)}>
+                    Create Contest
+                </Button>
+            </div>
 
-            <h3>Manage Contests</h3>
+            <h3 className="mt-4">Manage Contests</h3>
             <div className="row">
                 {contests.map(contest => (
-                    <div className="col-md-4" key={contest._id}>
-                        <div className="card mb-4">
+                    <div className="col-12 col-sm-6 col-lg-4 mb-4" key={contest._id}>
+                        <div className="card admin-card">
                             <div className="card-body">
-                                <h5 className="card-title">{contest.title}</h5>
-                                <p className="card-text">{contest.description}</p>
+                                <h5 className="card-title wrap-anywhere">{contest.title}</h5>
+                                <p className="card-text wrap-anywhere">{contest.description}</p>
                                 {contest.manual_control ? (
                                     <p className="card-text"><small className="text-muted">Type: Manual Control Contest</small></p>
                                 ) : (
@@ -386,38 +342,44 @@ const AdminDashboard = () => {
                                         {manualControlMode && <span className="ms-2 badge bg-info">Manual Control</span>}
                                     </small>
                                 </p>
-                                <Button variant="warning" onClick={() => handleEditContest(contest)}>Edit</Button>
-                                <Button variant="danger" onClick={() => openDeleteModal(contest)}>Delete</Button>
-                                <Button variant="info" onClick={() => handleViewContest(contest)}>View Photos</Button>
-                                
+                                <div className="action-row">
+                                    <Button variant="warning" onClick={() => handleEditContest(contest)}>Edit</Button>
+                                    <Button variant="danger" onClick={() => openDeleteModal(contest)}>Delete</Button>
+                                    <Button variant="info" onClick={() => handleViewContest(contest)}>View Photos</Button>
+                                </div>
+
                                 {/* Contest Controls */}
                                 <div className="contest-controls">
                                     {/* Contest Status Controls */}
                                     <div className="voting-controls">
                                         <small className="text-muted d-block mb-2">Contest Controls:</small>
-                                        {contest.contest_status === 'active' ? (
-                                            <Button className="me-2" variant="danger" onClick={() => handleStopContest(contest.title)}>
-                                                Stop Contest
-                                            </Button>
-                                        ) : (
-                                            <Button className="me-2" variant="success" onClick={() => handleStartContest(contest.title)}>
-                                                Start Contest
-                                            </Button>
-                                        )}
+                                        <div className="action-row">
+                                            {contest.contest_status === 'active' ? (
+                                                <Button variant="danger" onClick={() => handleStopContest(contest.title)}>
+                                                    Stop Contest
+                                                </Button>
+                                            ) : (
+                                                <Button variant="success" onClick={() => handleStartContest(contest.title)}>
+                                                    Start Contest
+                                                </Button>
+                                            )}
+                                        </div>
                                     </div>
-                                    
+
                                     {/* Voting Controls */}
                                     <div className="voting-controls">
                                         <small className="text-muted d-block mb-2">Voting Controls:</small>
-                                        {contest.voting_open ? (
-                                            <Button className="me-2" variant="secondary" onClick={() => handleStopVoting(contest.title)}>
-                                                Stop Voting
-                                            </Button>
-                                        ) : (
-                                            <Button className="me-2" variant="info" onClick={() => handleStartVoting(contest.title)}>
-                                                Start Voting
-                                            </Button>
-                                        )}
+                                        <div className="action-row">
+                                            {contest.voting_open ? (
+                                                <Button variant="secondary" onClick={() => handleStopVoting(contest.title)}>
+                                                    Stop Voting
+                                                </Button>
+                                            ) : (
+                                                <Button variant="info" onClick={() => handleStartVoting(contest.title)}>
+                                                    Start Voting
+                                                </Button>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -427,7 +389,7 @@ const AdminDashboard = () => {
             </div>
 
             {/* Create Contest Modal */}
-            <Modal show={showCreateModal} onHide={() => setShowCreateModal(false)}>
+            <Modal show={showCreateModal} onHide={() => setShowCreateModal(false)} fullscreen="sm-down" centered>
                 <Modal.Header closeButton>
                     <Modal.Title>Create Contest</Modal.Title>
                 </Modal.Header>
@@ -487,7 +449,7 @@ const AdminDashboard = () => {
                                 You can start and stop them manually using the force controls.
                             </div>
                         )}
-                        <Button variant="primary" type="submit">
+                        <Button variant="primary" type="submit" className="w-100 mt-2">
                             Create Contest
                         </Button>
                     </form>
@@ -496,7 +458,7 @@ const AdminDashboard = () => {
 
             {/* Edit Contest Modal */}
             {editContest && (
-                <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
+                <Modal show={showEditModal} onHide={() => setShowEditModal(false)} fullscreen="sm-down" centered>
                     <Modal.Header closeButton>
                         <Modal.Title>Edit Contest</Modal.Title>
                     </Modal.Header>
@@ -556,7 +518,7 @@ const AdminDashboard = () => {
                                     Use the force controls to start and stop it.
                                 </div>
                             )}
-                            <Button variant="primary" type="submit">
+                            <Button variant="primary" type="submit" className="w-100 mt-2">
                                 Update Contest
                             </Button>
                         </form>
@@ -566,15 +528,17 @@ const AdminDashboard = () => {
 
             {/* Delete Contest Modal */}
             {contestToDelete && (
-                <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
+                <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
                     <Modal.Header closeButton>
                         <Modal.Title>Delete Contest</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                        <p>Are you sure you want to delete the contest "{contestToDelete.title}"?</p>
-                        <Button variant="danger" onClick={() => handleDeleteContest(contestToDelete)}>
-                            Delete
-                        </Button>
+                        <p className="wrap-anywhere">Are you sure you want to delete the contest "{contestToDelete.title}"?</p>
+                        <div className="action-row">
+                            <Button variant="danger" onClick={() => handleDeleteContest(contestToDelete)}>
+                                Delete
+                            </Button>
+                        </div>
                     </Modal.Body>
                 </Modal>
             )}

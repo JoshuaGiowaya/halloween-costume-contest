@@ -81,8 +81,8 @@ const PastContestPhotos = ({ contestTitle, onBack }) => {
     if (error) return <div>Error loading photos: {error.message}</div>;
 
     return (
-        <Container>
-            <Button variant="secondary" onClick={onBack}>Back to Contests</Button>
+        <Container fluid className="px-0">
+            <Button variant="secondary" className="sticky-back" onClick={onBack}>Back to Contests</Button>
             {photos.length === 0 ? (
                 <div className="my-4">
                     <h2>There were no participants in this contest</h2>
@@ -91,17 +91,24 @@ const PastContestPhotos = ({ contestTitle, onBack }) => {
                 <>
                     {admin && winner && (
                         <div className="my-4">
-                            <h2>Winner: {winner.uploaded_by}</h2>
-                            <img src={winner.photo_url} alt="Winner" className="img-fluid" />
+                            <h2 className="wrap-anywhere">Winner: {winner.uploaded_by}</h2>
+                            {/* The winner is the hero of the page, so it keeps its real
+                                aspect ratio instead of being cropped like the thumbnails. */}
+                            <img
+                                src={winner.photo_url}
+                                alt={`Winning costume by ${winner.uploaded_by}`}
+                                className="img-fluid rounded"
+                                style={{ maxHeight: '60vh', objectFit: 'contain' }}
+                            />
                         </div>
                     )}
                     <Row>
                         {photos.map(photo => (
-                            <Col md={4} key={photo._id} className="mb-4">
+                            <Col xs={12} sm={6} lg={4} key={photo._id} className="mb-4">
                                 <Card>
-                                    <Card.Img variant="top" src={photo.photo_url} />
+                                    <Card.Img variant="top" className="photo-thumb" src={photo.photo_url} alt={`Costume submitted by ${photo.uploaded_by}`} />
                                     <Card.Body>
-                                        <Card.Text>Uploaded by: {photo.uploaded_by}</Card.Text>
+                                        <Card.Text className="wrap-anywhere">Uploaded by: {photo.uploaded_by}</Card.Text>
                                         <Card.Text>Votes: {voteCounts[photo.photo_url] || 0}</Card.Text>
                                     </Card.Body>
                                 </Card>

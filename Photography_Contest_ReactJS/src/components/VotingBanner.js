@@ -9,25 +9,25 @@ const VotingBanner = () => {
       borderWidth: '2px',
       borderRadius: '10px'
     }}>
-      <h4 className="mb-3" style={{ color: '#007bff', fontWeight: 'bold' }}>
+      <h4 className="mb-3 fs-5" style={{ color: '#007bff', fontWeight: 'bold' }}>
         🗳️ Photography Contest Voting
       </h4>
-      <div className="row">
-        <div className="col-md-4">
+      <div className="row g-3">
+        <div className="col-12 col-md-4">
           <h6 style={{ color: '#007bff', fontWeight: 'bold' }}>📅 Voting Schedule</h6>
           <p className="mb-0">
             <strong>Opens:</strong> Thursday Morning<br/>
             <strong>Closes:</strong> Check contest details
           </p>
         </div>
-        <div className="col-md-4">
+        <div className="col-12 col-md-4">
           <h6 style={{ color: '#007bff', fontWeight: 'bold' }}>🔐 Quick Access</h6>
           <p className="mb-0">
             <strong>Username:</strong> Your choice<br/>
-            <strong>Password:</strong> <code>yardstik-halloween-2025</code>
+            <strong>Password:</strong> <code className="wrap-anywhere">yardstik-halloween-2026</code>
           </p>
         </div>
-        <div className="col-md-4">
+        <div className="col-12 col-md-4">
           <h6 style={{ color: '#007bff', fontWeight: 'bold' }}>📸 How to Vote</h6>
           <p className="mb-0">
             1. Register/Login<br/>

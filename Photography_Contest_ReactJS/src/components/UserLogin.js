@@ -181,17 +181,17 @@ const UserLogin = () => {
   // Show loading spinner while checking username-only mode
   if (modeLoading) {
     return (
-      <div className="container mt-5 text-center">
+      <div className="mt-4 text-center">
         <Spinner animation="border" role="status">
           <span className="sr-only">Loading...</span>
         </Spinner>
-        <p className="text-light mt-2">Loading login form...</p>
+        <p className="mt-2">Loading login form...</p>
       </div>
     );
   }
 
   return (
-    <div className="container mt-5">
+    <div className="mt-4">
       <h2 className="text-center" style={{ color: '#007bff' }}>Login</h2>
       {message && <div className="alert alert-success text-center">{message}</div>}
       {error && <div className="alert alert-danger text-center">{error}</div>}
@@ -200,47 +200,53 @@ const UserLogin = () => {
           <strong>Note:</strong> Please use your username to login.
         </div>
       )}
-      <form onSubmit={handleLogin} className="mx-auto shadow p-4 rounded bg-light" style={{ maxWidth: '400px', border: '2px solid #007bff' }}>
+      <form onSubmit={handleLogin} className="form-card shadow bg-light">
         <div className="form-group">
-          <label style={{ fontWeight: 'bold', color: '#007bff' }}>
+          <label htmlFor="login-identifier">
             {usernameOnlyMode ? 'Username:' : 'Email:'}
           </label>
           {usernameOnlyMode ? (
             <input
+              id="login-identifier"
               type="text"
               className="form-control"
+              autoComplete="username"
+              autoCapitalize="none"
+              autoCorrect="off"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
-              style={{ borderColor: '#007bff', borderWidth: '2px' }}
             />
           ) : (
             <input
+              id="login-identifier"
               type="email"
               className="form-control"
+              autoComplete="email"
+              autoCapitalize="none"
+              autoCorrect="off"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              style={{ borderColor: '#007bff', borderWidth: '2px' }}
             />
           )}
         </div>
-        <br />
-        <div className="form-group">
-          <label style={{ fontWeight: 'bold', color: '#007bff' }}>Password:</label>
+        <div className="form-group mt-3">
+          <label htmlFor="login-password">Password:</label>
           <input
+            id="login-password"
             type="password"
             className="form-control"
+            autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            style={{ borderColor: '#007bff', borderWidth: '2px' }}
           />
         </div>
-        <button type="submit" className="btn btn-primary d-block mx-auto mt-4" style={{ backgroundColor: '#007bff', borderColor: '#007bff', fontWeight: 'bold' }}>
+        <button type="submit" className="btn btn-primary mt-4" style={{ fontWeight: 'bold' }}>
           {loading ? <Spinner animation="border" size="sm" /> : 'Login'}
         </button>
-        <p className="text-center mt-3">
+        <p className="text-center mt-3 mb-0">
           <button
             type="button"
             className="btn btn-link"
@@ -248,11 +254,11 @@ const UserLogin = () => {
             style={{ color: '#007bff', fontWeight: 'bold' }}
           >
             Forgot Password?
-          </button> 
+          </button>
         </p>
       </form>
 
-      <Modal show={showModal} onHide={closeModal}>
+      <Modal show={showModal} onHide={closeModal} fullscreen="sm-down" centered>
         <Modal.Header closeButton>
           <Modal.Title style={{ color: '#007bff', fontWeight: 'bold' }}>
             {modalStep === 'forgotPassword' ? 'Forgot Password' : 'Reset Password'}
@@ -265,62 +271,64 @@ const UserLogin = () => {
           {modalStep === 'forgotPassword' && (
             <form onSubmit={handleForgotPassword}>
               <div className="form-group">
-               <strong>Password: </strong><strong>yardstik-halloween-2025</strong>
+               <strong>Password: </strong><strong className="wrap-anywhere">yardstik-halloween-2026</strong>
                <br />
                <br />
-               <strong>Stil Need help? <a href="https://docs.google.com/document/d/1FCoiD5cuKQNHtSxMSuhVY2fZSNi6zWZsqsmC0RniP5Q/edit?tab=t.0#heading=h.ub4fqn7itppp" target="_blank">Instructions Doc</a></strong>
+               <strong>Stil Need help? <a href="https://docs.google.com/document/d/1FCoiD5cuKQNHtSxMSuhVY2fZSNi6zWZsqsmC0RniP5Q/edit?tab=t.0#heading=h.ub4fqn7itppp" target="_blank" rel="noreferrer">Instructions Doc</a></strong>
               </div>
             </form>
           )}
 
           {modalStep === 'resetPassword' && (
-            <form onSubmit={handleResetPassword}>
+            <form onSubmit={handleResetPassword} className="form-card border-0 p-0 shadow-none">
               <div className="form-group">
-                <label style={{ fontWeight: 'bold', color: '#007bff' }}>OTP:</label>
-                <div className="d-flex justify-content-between">
+                <label>OTP:</label>
+                {/* .otp-inputs lets the six boxes share the row's width, so they
+                    fit a 320px screen instead of overflowing it. */}
+                <div className="otp-inputs">
                   {otp.map((data, index) => (
                     <input
                       type="text"
                       name="otp"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
                       maxLength="1"
                       key={index}
                       value={data}
                       onChange={(e) => handleOtpChange(e.target, index)}
                       onFocus={(e) => e.target.select()}
-                      className="form-control text-center"
-                      style={{ width: '3rem', marginRight: '0.5rem', borderColor: '#007bff', borderWidth: '2px' }}
+                      className="form-control"
                     />
                   ))}
                 </div>
               </div>
-              <br />
-              <div className="form-group">
-                <label style={{ fontWeight: 'bold', color: '#007bff' }}>New Password:</label>
+              <div className="form-group mt-3">
+                <label htmlFor="reset-new-password">New Password:</label>
                 <input
+                  id="reset-new-password"
                   type="password"
                   className="form-control"
+                  autoComplete="new-password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
                   placeholder="Enter new password"
-                  style={{ borderColor: '#007bff', borderWidth: '2px' }}
                 />
               </div>
-              <br />
-              <div className="form-group">
-                <label style={{ fontWeight: 'bold', color: '#007bff' }}>Confirm Password:</label>
+              <div className="form-group mt-3">
+                <label htmlFor="reset-confirm-password">Confirm Password:</label>
                 <input
+                  id="reset-confirm-password"
                   type="password"
                   className="form-control"
+                  autoComplete="new-password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   placeholder="Confirm new password"
-                  style={{ borderColor: '#007bff', borderWidth: '2px' }}
                 />
               </div>
-              <br />
-              <button type="submit" className="btn btn-primary d-block mx-auto mt-4" style={{ backgroundColor: '#007bff', borderColor: '#007bff', fontWeight: 'bold' }}>
+              <button type="submit" className="btn btn-primary mt-4" style={{ fontWeight: 'bold' }}>
                 {loading ? <Spinner animation="border" size="sm" /> : 'Reset Password'}
               </button>
             </form>

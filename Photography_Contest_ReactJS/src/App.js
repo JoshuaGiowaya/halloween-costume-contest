@@ -20,7 +20,7 @@ const App = () => {
     return (
         <Router>
             <NavbarComponent />
-            <div className="main-content container mt-4">
+            <div className="main-content container-lg pt-3">
                 <Routes>
                     <Route path="/" element={<HomePage />} />
                     <Route path="/login" element={<UserLogin />} />
