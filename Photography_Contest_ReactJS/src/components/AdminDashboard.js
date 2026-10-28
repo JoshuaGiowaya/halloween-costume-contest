@@ -4,6 +4,8 @@ import axios from 'axios';
 import { Modal, Button } from 'react-bootstrap';
 import AdminContestPhotos from './AdminContestPhotos';
 import { AdminAuthContext } from '../context/AdminAuthContext';
+import { toLocalInputValue, toInstant } from '../utils/contestDates';
+import { serverMessage } from '../utils/serverMessage';
 
 const AdminDashboard = () => {
     const [contests, setContests] = useState([]);
@@ -146,9 +148,10 @@ const AdminDashboard = () => {
                     end_date: null,
                     manual_control: true
                 } : {
-                    // Normal mode: use provided dates
-                    start_date: newContest.start_date,
-                    end_date: newContest.end_date,
+                    // Normal mode: use provided dates, sent as instants so the
+                    // server stores the moment the admin actually picked
+                    start_date: toInstant(newContest.start_date),
+                    end_date: toInstant(newContest.end_date),
                     manual_control: false
                 })
             };
@@ -219,7 +222,13 @@ const AdminDashboard = () => {
     };
 
     const handleEditContest = (contest) => {
-        setEditContest(contest);
+        // The stored instants have to be rewritten as local-time strings or the
+        // datetime-local inputs come up blank and refuse to submit.
+        setEditContest({
+            ...contest,
+            start_date: toLocalInputValue(contest.start_date),
+            end_date: toLocalInputValue(contest.end_date),
+        });
         setShowEditModal(true);
     };
 
@@ -231,12 +240,11 @@ const AdminDashboard = () => {
     const handleUpdateContest = async (e) => {
         e.preventDefault();
         try {
-            console.log(editContest.title,editContest.description,editContest.start_date,editContest.end_date)
             await axios.put(`${process.env.REACT_APP_API_URL}/api/contests/update`, {
                 title: editContest.title,
                 description: editContest.description,
-                start_date: editContest.start_date,
-                end_date: editContest.end_date
+                start_date: toInstant(editContest.start_date),
+                end_date: toInstant(editContest.end_date)
             }, {
                 headers: {
                     'x-api-key': process.env.REACT_APP_API_KEY,
@@ -248,6 +256,7 @@ const AdminDashboard = () => {
             setShowEditModal(false);
         } catch (error) {
             console.error('Error updating contest:', error);
+            alert(serverMessage(error, 'Failed to update contest'));
         }
     };
 
@@ -471,9 +480,11 @@ const AdminDashboard = () => {
                                     className="form-control"
                                     name="title"
                                     value={editContest.title}
-                                    onChange={handleEditInputChange}
-                                    required
+                                    readOnly
                                 />
+                                <small className="form-text text-muted">
+                                    The title identifies the contest everywhere its photos and votes are stored, so it can't be changed here.
+                                </small>
                             </div>
                             <div className="form-group">
                                 <label>Description:</label>
