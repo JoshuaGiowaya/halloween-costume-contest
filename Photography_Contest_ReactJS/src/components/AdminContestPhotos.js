@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Spinner } from 'react-bootstrap';
 import axios from 'axios';
+import PhotoViewer, { opensViewer } from './PhotoViewer';
 
 const AdminContestPhotos = ({ contest, show, onHide }) => {
     const [photos, setPhotos] = useState([]);
     const [loadingPhotos, setLoadingPhotos] = useState(false);
     const [loadingDelete, setLoadingDelete] = useState(false);
+    const [viewing, setViewing] = useState(null);
 
     useEffect(() => {
         if (contest) {
@@ -90,7 +92,7 @@ const AdminContestPhotos = ({ contest, show, onHide }) => {
                                 {photos.map(photo => (
                                     <div className="col-12 col-sm-6 col-lg-4 mb-4" key={photo._id}>
                                         <div className="card">
-                                            <img src={photo.photo_url} className="card-img-top photo-thumb" alt={`Costume submitted by ${photo.uploaded_by}`} />
+                                            <img src={photo.photo_url} className="card-img-top photo-thumb" alt={`Costume submitted by ${photo.uploaded_by}`} {...opensViewer(() => setViewing(photo))} />
                                             <div className="card-body">
                                                 <p className="wrap-anywhere">Uploaded by: {photo.uploaded_by}</p>
                                                 {photo.description && (
@@ -118,6 +120,7 @@ const AdminContestPhotos = ({ contest, show, onHide }) => {
                         )}
                     </>
                 )}
+                <PhotoViewer photo={viewing} onHide={() => setViewing(null)} />
             </Modal.Body>
             <Modal.Footer>
                 <Button variant="secondary" onClick={onHide}>Close</Button>

@@ -125,6 +125,11 @@ img {
   background-color: #f1f3f5;
 }
 
+/* Thumbnails that open PhotoViewer. */
+.photo-thumb[role='button'] {
+  cursor: zoom-in;
+}
+
 /* ------------------------------------------------- buttons and controls */
 
 button,
@@ -274,6 +279,41 @@ button,
    rather than the page behind them. */
 .modal-body {
   overflow-y: auto;
+}
+
+/* PhotoViewer can open on top of the admin photos modal, so it and its
+   backdrop sit one layer above Bootstrap's defaults (1050 / 1055). */
+.modal.photo-viewer {
+  --bs-modal-zindex: 1065;
+}
+
+.modal-backdrop.photo-viewer-backdrop {
+  --bs-backdrop-zindex: 1060;
+  --bs-backdrop-opacity: 0.85;
+}
+
+.photo-viewer .modal-content {
+  background-color: #111;
+  color: #fff;
+}
+
+.photo-viewer .modal-header {
+  border-bottom-color: #333;
+}
+
+.photo-viewer .modal-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* contain, not cover: the point of the viewer is seeing the whole costume. */
+.photo-viewer-img {
+  display: block;
+  max-width: 100%;
+  max-height: 75vh;
+  object-fit: contain;
 }
 
 /* ----------------------------------------------- >= 576px (large phone) */

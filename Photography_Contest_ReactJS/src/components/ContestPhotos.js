@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Container, Row, Col, Card, Button, Spinner } from 'react-bootstrap';
 import { UserAuthContext } from '../context/UserAuthContext';
 import { AdminAuthContext } from '../context/AdminAuthContext';
+import PhotoViewer, { opensViewer } from './PhotoViewer';
 
 const ContestPhotos = ({ contestTitle, onBack }) => {
     const [photos, setPhotos] = useState([]);
@@ -11,6 +12,7 @@ const ContestPhotos = ({ contestTitle, onBack }) => {
     const [error, setError] = useState(null);
     const [contestInfo, setContestInfo] = useState(null);
     const [votingOpen, setVotingOpen] = useState(false);
+    const [viewing, setViewing] = useState(null);
 
     const { user } = useContext(UserAuthContext);
     const { admin } = useContext(AdminAuthContext);
@@ -107,7 +109,7 @@ const ContestPhotos = ({ contestTitle, onBack }) => {
                 {photos.map(photo => (
                     <Col xs={12} sm={6} lg={4} key={photo._id} className="mb-4">
                         <Card>
-                            <Card.Img variant="top" className="photo-thumb" src={photo.photo_url} alt={`Costume submitted by ${photo.uploaded_by}`} />
+                            <Card.Img variant="top" className="photo-thumb" src={photo.photo_url} alt={`Costume submitted by ${photo.uploaded_by}`} {...opensViewer(() => setViewing(photo))} />
                             <Card.Body>
                                 <Card.Text className="wrap-anywhere">Uploaded by: {photo.uploaded_by}</Card.Text>
                                 {photo.description && (
@@ -126,6 +128,7 @@ const ContestPhotos = ({ contestTitle, onBack }) => {
                     </Col>
                 ))}
             </Row>
+            <PhotoViewer photo={viewing} onHide={() => setViewing(null)} />
         </Container>
     );
 };
