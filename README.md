@@ -59,7 +59,7 @@ A full-stack photography contest application with user registration, photo submi
 - `MANUAL_CONTEST_CONTROL` - Enables manual contest management
 - `API_KEY` - Required for API authentication
 - `MONGODB_URI` - Database connection string
-- `REACT_APP_CLOUDINARY_CLOUD_NAME` / `REACT_APP_CLOUDINARY_UPLOAD_PRESET` - Optional fallback image host, used when imgbb is unavailable. See [Photo Upload Fallback](PHOTO_UPLOAD_FALLBACK.md)
+- `REACT_APP_CLOUDINARY_CLOUD_NAME` / `REACT_APP_CLOUDINARY_UPLOAD_PRESET` - **Required.** Photo uploads fail without them. See [Photo Uploads](PHOTO_UPLOADS.md)
 
 See [ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md) for complete configuration options.
 

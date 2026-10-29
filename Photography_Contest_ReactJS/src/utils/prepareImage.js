@@ -1,4 +1,4 @@
-// Prepares a user-selected photo for upload to imgbb.
+// Prepares a user-selected photo for upload to the image host.
 //
 // iPhones shoot HEIC by default. Chrome, Firefox and Edge cannot decode HEIC at
 // all, so a HEIC uploaded as-is is stored fine but renders as a broken image for

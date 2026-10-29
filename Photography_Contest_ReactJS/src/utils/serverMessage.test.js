@@ -64,7 +64,7 @@ const uploadFailure = (...reasons) => Object.assign(new Error('upload failed'), 
 describe('uploadMessage', () => {
     it('names the outage when a photo host is in maintenance', () => {
         const message = uploadMessage(uploadFailure(
-            { provider: 'imgbb', message: 'Imgbb is currently down for maintenance.' },
+            { provider: 'Cloudinary', message: 'Service is down for maintenance.' },
         ));
         expect(message).toMatch(/down for maintenance/);
         expect(message).toMatch(/nothing wrong with your photo/i);
@@ -74,15 +74,15 @@ describe('uploadMessage', () => {
     // counts as an outage even when the other host failed for its own reason.
     it('names the outage when only one of several hosts is in maintenance', () => {
         const message = uploadMessage(uploadFailure(
-            { provider: 'imgbb', message: 'Imgbb is currently down for maintenance.' },
-            { provider: 'Cloudinary', message: 'Upload preset not found' },
+            { provider: 'Cloudinary', message: 'Service is down for maintenance.' },
+            { provider: 'spare-host', message: 'Upload preset not found' },
         ));
         expect(message).toMatch(/down for maintenance/);
     });
 
     it('passes on why an image itself was rejected', () => {
-        expect(uploadMessage(uploadFailure({ provider: 'imgbb', message: 'Empty upload source.' })))
-            .toBe('The photo service did not accept that image: Empty upload source.');
+        expect(uploadMessage(uploadFailure({ provider: 'Cloudinary', message: 'File size too large.' })))
+            .toBe('The photo service did not accept that image: File size too large.');
     });
 
     it('blames the connection when there is nothing to report', () => {
