@@ -1,12 +1,6 @@
-import { serverMessage, uploadMessage } from './serverMessage';
+import { serverMessage } from './serverMessage';
 
 const FALLBACK = 'Something went wrong.';
-
-// Exactly what api.imgbb.com returned on 29 Oct 2026, when every submission
-// failed with a 400 that had nothing to do with the photo.
-const imgbbError = (message) => ({
-    response: { data: { status_code: 400, error: { message, code: 100 }, status_txt: 'Bad Request' } },
-});
 
 describe('serverMessage', () => {
     // What a contestant hits when their phone has dropped the login cookie and
@@ -53,25 +47,17 @@ describe('serverMessage', () => {
     // React throws on a non-string child, so returning the object blanked the
     // whole submission page rather than showing the reason.
     it('falls back rather than returning a non-string error', () => {
-        expect(serverMessage(imgbbError('Imgbb is currently down for maintenance.'), FALLBACK))
-            .toBe(FALLBACK);
-    });
-});
-
-describe('uploadMessage', () => {
-    it('names the outage when the photo service is in maintenance', () => {
-        const message = uploadMessage(imgbbError('Imgbb is currently down for maintenance.'));
-        expect(message).toMatch(/down for maintenance/);
-        expect(message).toMatch(/nothing wrong with your photo/i);
+        const error = { response: { data: { error: { message: 'Bad Request', code: 100 } } } };
+        expect(serverMessage(error, FALLBACK)).toBe(FALLBACK);
     });
 
-    it('passes on why an image itself was rejected', () => {
-        expect(uploadMessage(imgbbError('Empty upload source.')))
-            .toBe('The photo service did not accept that image: Empty upload source.');
-    });
-
-    it('blames the connection when the request never got a response', () => {
-        expect(uploadMessage({ message: 'Network Error' }))
-            .toMatch(/could not reach the photo service/i);
+    // What the upload route answers with when a photo clears the browser-side
+    // resize but still arrives too big to store.
+    it('reads the reason a photo was refused by the upload route', () => {
+        const error = {
+            response: { data: { error: 'That photo is larger than 12 MB even after conversion. Please try another one.' } },
+        };
+        expect(serverMessage(error, FALLBACK))
+            .toBe('That photo is larger than 12 MB even after conversion. Please try another one.');
     });
 });
