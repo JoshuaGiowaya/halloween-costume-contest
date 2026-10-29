@@ -20,25 +20,24 @@ export const serverMessage = (error, fallback) => {
     return fallback;
 };
 
-// The photo host rejects an image and reports its own outages with the same
-// HTTP 400, so the status alone cannot tell a contestant whether to try again
-// later or pick a different photo. The body can.
+// Turns an uploadPhoto failure into something a contestant can act on. By the
+// time this is called every configured host has already been tried, so the
+// question is only whether to wait or to pick a different photo - and the hosts
+// use the same HTTP 400 for "we are down" as for "we will not take that image",
+// so only their wording tells the two apart.
 export const uploadMessage = (error) => {
-    const data = error && error.response && error.response.data;
-    const reason = data && data.error && typeof data.error === 'object'
-        ? data.error.message
-        : null;
+    const reasons = error && Array.isArray(error.reasons) ? error.reasons : [];
 
-    if (reason && /maintenance|unavailable/i.test(reason)) {
+    if (!reasons.length) {
+        return 'We could not reach the photo service. Please check your connection and try again.';
+    }
+
+    if (reasons.some((reason) => /maintenance|unavailable/i.test(reason.message))) {
         return 'The photo service is down for maintenance, so your costume could not be uploaded. '
             + "There's nothing wrong with your photo - please try again in a few minutes.";
     }
 
-    if (reason) {
-        return `The photo service did not accept that image: ${reason}`;
-    }
-
-    return 'We could not reach the photo service. Please check your connection and try again.';
+    return `The photo service did not accept that image: ${reasons[reasons.length - 1].message}`;
 };
 
 export default serverMessage;
