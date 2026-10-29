@@ -14,6 +14,19 @@ export const opensViewer = (open) => ({
     },
 });
 
+// Corner badge telling people a thumbnail opens full-size. Place it inside the
+// .card next to the thumbnail; taps fall through to the thumbnail underneath.
+export const FullSizeHint = () => (
+    <span className="photo-thumb-hint" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" focusable="false">
+            <path
+                fillRule="evenodd"
+                d="M5.828 10.172a.5.5 0 0 0-.707 0l-4.096 4.096V11.5a.5.5 0 0 0-1 0v3.975a.5.5 0 0 0 .5.5H4.5a.5.5 0 0 0 0-1H1.732l4.096-4.096a.5.5 0 0 0 0-.707m4.344-4.344a.5.5 0 0 0 .707 0l4.096-4.096V4.5a.5.5 0 1 0 1 0V.525a.5.5 0 0 0-.5-.5H11.5a.5.5 0 0 0 0 1h2.768l-4.096 4.096a.5.5 0 0 0 0 .707"
+            />
+        </svg>
+    </span>
+);
+
 // Shows one photo uncropped so the whole costume is visible. Thumbnails crop to
 // 4:3, which cuts the head or feet off most full-body shots.
 const PhotoViewer = ({ photo, onHide }) => {

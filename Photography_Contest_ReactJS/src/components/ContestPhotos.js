@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Container, Row, Col, Card, Button, Spinner } from 'react-bootstrap';
 import { UserAuthContext } from '../context/UserAuthContext';
 import { AdminAuthContext } from '../context/AdminAuthContext';
-import PhotoViewer, { opensViewer } from './PhotoViewer';
+import PhotoViewer, { opensViewer, FullSizeHint } from './PhotoViewer';
 
 const ContestPhotos = ({ contestTitle, onBack }) => {
     const [photos, setPhotos] = useState([]);
@@ -110,6 +110,7 @@ const ContestPhotos = ({ contestTitle, onBack }) => {
                     <Col xs={12} sm={6} lg={4} key={photo._id} className="mb-4">
                         <Card>
                             <Card.Img variant="top" className="photo-thumb" src={photo.photo_url} alt={`Costume submitted by ${photo.uploaded_by}`} {...opensViewer(() => setViewing(photo))} />
+                            <FullSizeHint />
                             <Card.Body>
                                 <Card.Text className="wrap-anywhere">Uploaded by: {photo.uploaded_by}</Card.Text>
                                 {photo.description && (

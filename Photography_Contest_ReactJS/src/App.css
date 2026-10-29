@@ -130,6 +130,31 @@ img {
   cursor: zoom-in;
 }
 
+/* Expand badge in the thumbnail's top corner. Always shown, because phones
+   have no hover to reveal it. Positioned against .card, and pointer-events:
+   none lets taps fall through to the thumbnail. */
+.photo-thumb-hint {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.6);
+  /* The light ring keeps it visible on dark photos too. */
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5);
+  color: #fff;
+  pointer-events: none;
+}
+
+.photo-thumb-hint svg {
+  width: 1rem;
+  height: 1rem;
+}
+
 /* ------------------------------------------------- buttons and controls */
 
 button,

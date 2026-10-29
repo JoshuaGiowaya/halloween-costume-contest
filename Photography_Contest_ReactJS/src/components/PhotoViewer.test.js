@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import PhotoViewer, { opensViewer } from './PhotoViewer';
+import PhotoViewer, { opensViewer, FullSizeHint } from './PhotoViewer';
 
 const photo = {
     photo_url: 'https://example.test/api/photos/image/abc',
@@ -54,5 +54,18 @@ describe('opensViewer', () => {
         fireEvent.keyDown(thumb, { key: 'a' });
 
         expect(open).toHaveBeenCalledTimes(3);
+    });
+});
+
+describe('FullSizeHint', () => {
+    it('is decoration only, so screen readers still hear the thumbnail itself', () => {
+        render(
+            <div>
+                <img alt="thumb" {...opensViewer(() => {})} />
+                <FullSizeHint />
+            </div>
+        );
+        expect(screen.getByRole('button', { name: 'thumb' })).toBeInTheDocument();
+        expect(screen.queryAllByRole('img')).toHaveLength(0);
     });
 });
