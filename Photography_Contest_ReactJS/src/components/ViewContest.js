@@ -91,6 +91,7 @@ const ViewContests = () => {
     const [preparing, setPreparing] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState('');
+    const [deleting, setDeleting] = useState(false);
 
     useEffect(() => {
         // Fetch the contest data and disable join setting
@@ -398,6 +399,62 @@ const ViewContests = () => {
         }
     };
 
+    // Withdraws the entry entirely, so the card goes back to offering Join. Only
+    // reachable from the Edit modal, which is itself locked once voting opens.
+    const handleDelete = async () => {
+        if (!modalData.email) {
+            setSubmitError('Your session has expired. Please log in again, then try deleting.');
+            return;
+        }
+
+        if (!window.confirm('Delete your submission? Your photo and description will be removed from this contest.')) {
+            return;
+        }
+
+        setSubmitError('');
+        setDeleting(true);
+
+        const requestOptions = {
+            headers: {
+                'x-api-key': process.env.REACT_APP_API_KEY,
+            },
+            withCredentials: true,
+        };
+
+        try {
+            await axios.delete(`${process.env.REACT_APP_API_URL}/api/photos/delete`, {
+                ...requestOptions,
+                data: {
+                    contest_title: modalData.contest_title,
+                    email: modalData.email
+                },
+            });
+
+            // Votes point at the photo_url, so clear any left from an earlier
+            // voting round - the same cleanup the admin delete does.
+            await axios.delete(`${process.env.REACT_APP_API_URL}/api/votes/deleteimage`, {
+                ...requestOptions,
+                data: {
+                    photo_url: modalData.photo_url
+                },
+            }).catch(error => {
+                // A 404 just means nobody had voted for it.
+                if (!error.response || error.response.status !== 404) throw error;
+            });
+
+            setUserPhotos(userPhotos.filter(photo => !(
+                photo.contest_title === modalData.contest_title && photo.email === modalData.email
+            )));
+            setShowModal(false);
+            alert('Your submission has been deleted.');
+        } catch (error) {
+            console.error('There was an error deleting the submission!', error);
+            setSubmitError(serverMessage(error, 'We could not delete your submission. Please check your connection and try again.'));
+        } finally {
+            setDeleting(false);
+        }
+    };
+
     const handleBack = () => {
         setSelectedContest(null);
         setViewingPastContest(false);
@@ -564,7 +621,7 @@ const ViewContests = () => {
                                 autoCapitalize="words"
                                 enterKeyHint="next"
                                 maxLength={80}
-                                disabled={preparing || submitting}
+                                disabled={preparing || submitting || deleting}
                             />
                         </Form.Group>
                         <Form.Group controlId="formDescription" className="mt-3">
@@ -579,7 +636,7 @@ const ViewContests = () => {
                                 autoCapitalize="sentences"
                                 enterKeyHint="done"
                                 maxLength={500}
-                                disabled={preparing || submitting}
+                                disabled={preparing || submitting || deleting}
                             />
                             <Form.Text className="text-muted d-block">
                                 Optional &middot; up to 500 characters.
@@ -603,7 +660,7 @@ const ViewContests = () => {
                                 type="file"
                                 accept="image/*,.heic,.heif"
                                 onChange={handleFileChange}
-                                disabled={preparing || submitting}
+                                disabled={preparing || submitting || deleting}
                             />
                             <Form.Text className="text-muted d-block">
                                 {modalMode === 'edit' && 'Leave empty to keep your current photo. '}
@@ -619,7 +676,7 @@ const ViewContests = () => {
                             variant="primary"
                             type="submit"
                             className="mt-4 w-100"
-                            disabled={preparing || submitting}
+                            disabled={preparing || submitting || deleting}
                         >
                             {preparing
                                 ? 'Preparing photo…'
@@ -627,6 +684,17 @@ const ViewContests = () => {
                                     ? (modalMode === 'edit' ? 'Saving…' : 'Submitting…')
                                     : (modalMode === 'edit' ? 'Save changes' : 'Submit costume')}
                         </Button>
+                        {modalMode === 'edit' && (
+                            <Button
+                                variant="outline-danger"
+                                type="button"
+                                className="mt-3 w-100"
+                                onClick={handleDelete}
+                                disabled={preparing || submitting || deleting}
+                            >
+                                {deleting ? 'Deleting…' : 'Delete submission'}
+                            </Button>
+                        )}
                     </Form>
                 </Modal.Body>
             </Modal>

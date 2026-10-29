@@ -87,6 +87,14 @@ const updatePhoto = async (req, res) => {
 
 // Delete a photo using contest_title and uploaded_by
 const deletePhoto = async (req, res) => {
+    // Without this a request missing its email reaches Mongo as
+    // { contest_title } alone - Mongoose drops undefined keys - and deletes
+    // whichever entry in the contest it finds first.
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
     const { contest_title, email } = req.body;
 
     try {
