@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { Modal } from 'react-bootstrap';
 
-// Props that make a cropped thumbnail open the viewer on click, Enter or Space.
+// Props that make a thumbnail open the viewer on click, Enter or Space.
 export const opensViewer = (open) => ({
     role: 'button',
     tabIndex: 0,
@@ -27,8 +27,8 @@ export const FullSizeHint = () => (
     </span>
 );
 
-// Shows one photo uncropped so the whole costume is visible. Thumbnails crop to
-// 4:3, which cuts the head or feet off most full-body shots.
+// Shows one photo as large as the screen allows. Thumbnails fit the whole photo
+// into a small square, so a tall full-body shot ends up letterboxed and tiny.
 const PhotoViewer = ({ photo, onHide }) => {
     // Keep showing the last photo while the modal fades out after `photo` goes null.
     const lastPhoto = useRef(photo);
