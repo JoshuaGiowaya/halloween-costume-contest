@@ -8,6 +8,7 @@ import { UserAuthContext } from '../context/UserAuthContext';
 import { AdminAuthContext } from '../context/AdminAuthContext';
 import { prepareImage, validateFile, MAX_UPLOAD_MB } from '../utils/prepareImage';
 import { serverMessage, uploadMessage } from '../utils/serverMessage';
+import { uploadPhoto } from '../utils/uploadPhoto';
 
 // Axios configuration with interceptors
 let spinnerCounter = 0;
@@ -333,29 +334,16 @@ const ViewContests = () => {
         try {
             let imgUrl = null;
             if (upload) {
-                const formData = new FormData();
-                formData.append('image', upload);
-                formData.append('key', '10fc3bdb39131e1d5f242cbb5d183090'); // Replace with your imgbb API key
-
                 // Handled separately from the save below: a failure here is the
                 // photo host, not this contest's API, and saying so is the
                 // difference between a contestant waiting a few minutes and one
                 // re-shooting a costume photo that was never the problem.
-                let imgbbResponse;
+                // uploadPhoto has already tried every host before it throws.
                 try {
-                    imgbbResponse = await axios.post('https://api.imgbb.com/1/upload', formData);
+                    imgUrl = await uploadPhoto(upload);
                 } catch (error) {
-                    console.error('The photo service rejected the upload!', error);
+                    console.error('The photo could not be uploaded to any host!', error);
                     setSubmitError(uploadMessage(error));
-                    return;
-                }
-
-                imgUrl = imgbbResponse.data
-                    && imgbbResponse.data.data
-                    && imgbbResponse.data.data.url;
-
-                if (!imgUrl) {
-                    setSubmitError('The photo service did not accept that image. Please try another photo.');
                     return;
                 }
             }
