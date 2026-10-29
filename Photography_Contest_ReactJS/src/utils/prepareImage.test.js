@@ -4,9 +4,25 @@ import {
     validateFile,
     targetDimensions,
     jpegNameFor,
+    prepareImage,
     MAX_UPLOAD_MB,
     MAX_DIMENSION,
 } from './prepareImage';
+
+const UNREADABLE_MESSAGE = 'We could not read that photo. Please try another one.';
+
+// The real decoder is a 2 MB WASM bundle and jsdom has no canvas to draw its
+// output onto, so the HEIC tests below stub it and assert on what the contestant
+// is told rather than on pixels.
+const mockDecode = jest.fn();
+jest.mock('libheif-js/wasm-bundle', () => ({
+    __esModule: true,
+    default: {
+        HeifDecoder: function HeifDecoder() {
+            this.decode = mockDecode;
+        },
+    },
+}));
 
 // jsdom implements neither canvas encoding nor object URLs, so these cover the
 // selection logic rather than the pixel pipeline. That is where the iPhone bug
@@ -105,6 +121,47 @@ describe('extensionOf', () => {
 
     it('returns an empty string when there is no extension', () => {
         expect(extensionOf('image')).toBe('');
+    });
+});
+
+// The submit handler puts whatever prepareImage throws straight into the form,
+// so these guard the copy a contestant actually reads. The regression they exist
+// for: heic2any surfaced "ERR_LIBHEIF format not supported" on every tile-gridded
+// iPhone HEIC, and that string was shown verbatim.
+describe('prepareImage error reporting', () => {
+    const heicFile = () => ({
+        name: 'IMG_4821.HEIC',
+        type: 'image/heic',
+        size: 2 * 1024 * 1024,
+        arrayBuffer: async () => new ArrayBuffer(8),
+    });
+
+    beforeEach(() => {
+        mockDecode.mockReset();
+    });
+
+    it('passes a validation message through unchanged', async () => {
+        await expect(prepareImage({ name: 'resume.pdf', type: 'application/pdf', size: 1000 }))
+            .rejects.toThrow(/Only JPG, PNG, WEBP, AVIF, HEIC and HEIF/);
+    });
+
+    it('does not show a contestant a decoder diagnostic', async () => {
+        mockDecode.mockImplementation(() => { throw new Error('ERR_LIBHEIF format not supported'); });
+
+        await expect(prepareImage(heicFile())).rejects.toThrow(UNREADABLE_MESSAGE);
+    });
+
+    it('keeps the decoder diagnostic as the cause for the console', async () => {
+        const diagnostic = new Error('ERR_LIBHEIF format not supported');
+        mockDecode.mockImplementation(() => { throw diagnostic; });
+
+        await expect(prepareImage(heicFile())).rejects.toMatchObject({ cause: diagnostic });
+    });
+
+    it('reports a HEIC the decoder returns nothing for', async () => {
+        mockDecode.mockReturnValue([]);
+
+        await expect(prepareImage(heicFile())).rejects.toThrow(UNREADABLE_MESSAGE);
     });
 });
 

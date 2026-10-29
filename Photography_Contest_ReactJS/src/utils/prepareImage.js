@@ -77,6 +77,12 @@ export const jpegNameFor = (filename) => {
     return `${base || 'photo'}.jpg`;
 };
 
+// Whatever this module throws is shown to the contestant verbatim, so every
+// error raised here has to be copy someone entering a costume contest can act
+// on. Errors from inside a decoder are flagged differently — see prepareImage.
+const UNREADABLE_MESSAGE = 'We could not read that photo. Please try another one.';
+const userError = (message) => Object.assign(new Error(message), { userFacing: true });
+
 const loadImage = (blob) => new Promise((resolve, reject) => {
     const objectUrl = URL.createObjectURL(blob);
     const img = new Image();
@@ -86,38 +92,73 @@ const loadImage = (blob) => new Promise((resolve, reject) => {
     };
     img.onerror = () => {
         URL.revokeObjectURL(objectUrl);
-        reject(new Error('The browser could not decode this image.'));
+        reject(userError('The browser could not decode this image.'));
     };
     img.src = objectUrl;
 });
 
+// libheif hands back raw pixels rather than an encoded image, so the HEIC path
+// returns a canvas instead of an <img>. Both are valid drawImage sources and both
+// carry width/height, so encodeJpeg below treats them the same.
+//
+// Rotation is already correct here: libheif applies the HEIF `irot` property
+// while decoding, the same way browsers apply EXIF orientation. Verified against
+// macOS renderings of portrait iPhone photos.
+const canvasFromHeic = async (file) => {
+    const { default: libheif } = await import('libheif-js/wasm-bundle');
+    const lib = await libheif;
+
+    const buffer = new Uint8Array(await file.arrayBuffer());
+    const images = new lib.HeifDecoder().decode(buffer);
+    if (!images || !images.length) {
+        throw userError(UNREADABLE_MESSAGE);
+    }
+
+    const image = images[0];
+    const width = image.get_width();
+    const height = image.get_height();
+
+    const pixels = new ImageData(width, height);
+    await new Promise((resolve, reject) => {
+        image.display(pixels, (result) => (
+            result ? resolve(result) : reject(userError(UNREADABLE_MESSAGE))
+        ));
+    });
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    canvas.getContext('2d').putImageData(pixels, 0, 0);
+    return canvas;
+};
+
 // Safari decodes HEIC natively, so the common case — someone submitting from
 // their iPhone — never downloads the WASM decoder. Everyone else falls back to
-// heic2any, imported lazily so the bundle cost lands only on the people who need
+// libheif, imported lazily so the bundle cost lands only on the people who need
 // it.
+//
+// This used to call heic2any, which is pinned at its only published version and
+// bundles a libheif too old to read the tiled `grid` layout every modern iPhone
+// writes. It failed on essentially every real iPhone photo with
+// "ERR_LIBHEIF format not supported", and only ever on desktop, because Safari
+// never reaches this branch.
 const decode = async (file) => {
     try {
         return await loadImage(file);
     } catch (error) {
         if (!isHeic(file)) throw error;
-        const { default: heic2any } = await import('heic2any');
-        const converted = await heic2any({
-            blob: file,
-            toType: 'image/jpeg',
-            quality: JPEG_QUALITY,
-        });
-        return loadImage(Array.isArray(converted) ? converted[0] : converted);
+        return canvasFromHeic(file);
     }
 };
 
-// Drawing through an <img> element is what gets EXIF rotation right: browsers
-// apply the orientation tag while decoding, so the canvas receives already-upright
-// pixels. Re-encoding then drops the tag, leaving an image that is the right way
-// up in every viewer.
-const encodeJpeg = (img) => new Promise((resolve, reject) => {
+// The source is already upright whichever way it was decoded: browsers apply the
+// EXIF orientation tag while decoding an <img>, and libheif applies `irot` while
+// decoding a HEIC. Re-encoding then drops the tag, leaving an image that is the
+// right way up in every viewer.
+const encodeJpeg = (source) => new Promise((resolve, reject) => {
     const { width, height } = targetDimensions(
-        img.naturalWidth || img.width,
-        img.naturalHeight || img.height,
+        source.naturalWidth || source.width,
+        source.naturalHeight || source.height,
     );
 
     const canvas = document.createElement('canvas');
@@ -128,10 +169,10 @@ const encodeJpeg = (img) => new Promise((resolve, reject) => {
     // JPEG has no alpha channel; without a matte, transparent PNG areas go black.
     context.fillStyle = '#ffffff';
     context.fillRect(0, 0, width, height);
-    context.drawImage(img, 0, 0, width, height);
+    context.drawImage(source, 0, 0, width, height);
 
     canvas.toBlob(
-        (blob) => (blob ? resolve(blob) : reject(new Error('The photo could not be converted.'))),
+        (blob) => (blob ? resolve(blob) : reject(userError('The photo could not be converted.'))),
         'image/jpeg',
         JPEG_QUALITY,
     );
@@ -139,13 +180,23 @@ const encodeJpeg = (img) => new Promise((resolve, reject) => {
 
 export const prepareImage = async (file) => {
     const check = validateFile(file);
-    if (!check.ok) throw new Error(check.error);
+    if (!check.ok) throw userError(check.error);
 
-    const img = await decode(file);
-    const blob = await encodeJpeg(img);
+    // A decoder failing from the inside throws its own diagnostics — libheif
+    // reports an unreadable file as "ERR_LIBHEIF format not supported" — and the
+    // submit handler shows whatever lands here straight to the contestant. Only
+    // messages written for them get through; the rest become the generic copy
+    // and stay in the console for us.
+    try {
+        const source = await decode(file);
+        const blob = await encodeJpeg(source);
 
-    return new File([blob], jpegNameFor(file.name), {
-        type: 'image/jpeg',
-        lastModified: Date.now(),
-    });
+        return new File([blob], jpegNameFor(file.name), {
+            type: 'image/jpeg',
+            lastModified: Date.now(),
+        });
+    } catch (error) {
+        if (error && error.userFacing) throw error;
+        throw Object.assign(userError(UNREADABLE_MESSAGE), { cause: error });
+    }
 };
