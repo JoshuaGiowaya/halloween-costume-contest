@@ -17,7 +17,7 @@ const {
   validateContestUpdate
 } = require('../middleware/validators');
 const apiKeyMiddleware = require('../middleware/apiKeyMiddleware');
-const { protect } = require('../middleware/authMiddleware');
+const { protect, requireAdmin } = require('../middleware/authMiddleware');
 
 // Apply API key middleware globally to all contest routes
 router.use(apiKeyMiddleware);
@@ -30,11 +30,11 @@ router.post('/insert', validateContestCreate, createContest);
 router.put('/update', validateContestUpdate, updateContestByTitle);
 router.delete('/delete', deleteContestByTitle);
 // Admin-only contest controls
-router.post('/:title/start', protect, startContestByTitle);
-router.post('/:title/stop', protect, stopContestByTitle);
+router.post('/:title/start', protect, requireAdmin, startContestByTitle);
+router.post('/:title/stop', protect, requireAdmin, stopContestByTitle);
 
 // Admin-only voting controls
-router.post('/:title/voting/start', protect, startVotingByTitle);
-router.post('/:title/voting/stop', protect, stopVotingByTitle);
+router.post('/:title/voting/start', protect, requireAdmin, startVotingByTitle);
+router.post('/:title/voting/stop', protect, requireAdmin, stopVotingByTitle);
 
 module.exports = router;

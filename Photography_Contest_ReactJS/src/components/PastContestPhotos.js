@@ -4,10 +4,12 @@ import { Container, Row, Col, Card, Button, Spinner } from 'react-bootstrap';
 import { UserAuthContext } from '../context/UserAuthContext';
 import { AdminAuthContext } from '../context/AdminAuthContext';
 import PhotoViewer, { opensViewer, FullSizeHint } from './PhotoViewer';
+import { tallyVotes } from '../utils/tallyVotes';
 
 const PastContestPhotos = ({ contestTitle, onBack }) => {
     const [photos, setPhotos] = useState([]);
-    const [winner, setWinner] = useState(null);
+    const [winners, setWinners] = useState([]);
+    const [tied, setTied] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [voteCounts, setVoteCounts] = useState({});
@@ -30,45 +32,21 @@ const PastContestPhotos = ({ contestTitle, onBack }) => {
                 });
                 const votes = votesResponse.data.filter(vote => vote.contest_title === contestTitle);
 
-                let winnerPhoto = null;
-                const counts = {};
+                // Fetch all photos for the contest
+                const photosResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/photos/fetch`, {
+                    headers: {
+                        'x-api-key': process.env.REACT_APP_API_KEY,
+                    },
+                    withCredentials: true,
+                });
+                const filteredPhotos = photosResponse.data.filter(photo => photo.contest_title === contestTitle);
+                setPhotos(filteredPhotos);
 
-                if (votes.length > 0) {
-                    // Count the number of votes each photo received
-                    const voteCounts = votes.reduce((acc, vote) => {
-                        acc[vote.photo_url] = (acc[vote.photo_url] || 0) + 1;
-                        return acc;
-                    }, {});
-                    setVoteCounts(voteCounts);
+                const tally = tallyVotes(votes, filteredPhotos);
+                setVoteCounts(tally.counts);
+                setWinners(tally.winners);
+                setTied(tally.tied);
 
-                    // Find the photo with the highest votes
-                    const winnerPhotoUrl = Object.keys(voteCounts).reduce((a, b) => voteCounts[a] > voteCounts[b] ? a : b);
-
-                    // Fetch all photos for the contest
-                    const photosResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/photos/fetch`, {
-                        headers: {
-                            'x-api-key': process.env.REACT_APP_API_KEY,
-                        },
-                        withCredentials: true,
-                    });
-                    const filteredPhotos = photosResponse.data.filter(photo => photo.contest_title === contestTitle);
-                    setPhotos(filteredPhotos);
-
-                    // Find the winner's details
-                    winnerPhoto = filteredPhotos.find(photo => photo.photo_url === winnerPhotoUrl);
-                } else {
-                    // Fetch all photos for the contest if no votes
-                    const photosResponse = await axios.get(`${process.env.REACT_APP_API_URL}/api/photos/fetch`, {
-                        headers: {
-                            'x-api-key': process.env.REACT_APP_API_KEY,
-                        },
-                        withCredentials: true,
-                    });
-                    const filteredPhotos = photosResponse.data.filter(photo => photo.contest_title === contestTitle);
-                    setPhotos(filteredPhotos);
-                }
-
-                setWinner(winnerPhoto);
                 setLoading(false);
             } catch (error) {
                 setError(error);
@@ -91,17 +69,28 @@ const PastContestPhotos = ({ contestTitle, onBack }) => {
                 </div>
             ) : (
                 <>
-                    {admin && winner && (
+                    {admin && winners.length > 0 && (
                         <div className="my-4">
-                            <h2 className="wrap-anywhere">Winner: {winner.uploaded_by}</h2>
+                            {/* A tie is called rather than broken: with this few
+                                voters two costumes finishing level is likely, and
+                                picking one of them silently is how the wrong name
+                                gets read out. */}
+                            <h2 className="wrap-anywhere">
+                                {tied
+                                    ? `Tied for first: ${winners.map(w => w.uploaded_by).join(', ')}`
+                                    : `Winner: ${winners[0].uploaded_by}`}
+                            </h2>
                             {/* The winner is the hero of the page, so it keeps its real
                                 aspect ratio instead of being cropped like the thumbnails. */}
-                            <img
-                                src={winner.photo_url}
-                                alt={`Winning costume by ${winner.uploaded_by}`}
-                                className="img-fluid rounded"
-                                style={{ maxHeight: '60vh', objectFit: 'contain' }}
-                            />
+                            {winners.map(winner => (
+                                <img
+                                    key={winner._id}
+                                    src={winner.photo_url}
+                                    alt={`Winning costume by ${winner.uploaded_by}`}
+                                    className="img-fluid rounded mb-3"
+                                    style={{ maxHeight: '60vh', objectFit: 'contain' }}
+                                />
+                            ))}
                         </div>
                     )}
                     <Row>

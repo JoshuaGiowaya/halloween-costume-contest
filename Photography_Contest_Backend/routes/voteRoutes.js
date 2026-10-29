@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   createVote,
   getAllVotes,
+  getMyVote,
   updateVote,
   deleteVote,
   deleteVoteForImage
@@ -20,6 +21,7 @@ router.use(apiKeyMiddleware);
 
 // Vote Routes
 router.get('/fetch', getAllVotes);
+router.get('/mine', getMyVote);
 router.post('/insert', validateVoteCreate, createVote);
 router.put('/update', validateVoteUpdate, updateVote);
 router.delete('/delete', validateVoteDelete, deleteVote);

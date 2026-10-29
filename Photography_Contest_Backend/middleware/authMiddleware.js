@@ -23,8 +23,10 @@ const protect = async (req, res, next) => {
 
     // Try to find the user or admin based on the decoded ID
     let user = await User.findById(decoded.id).select('-password');
+    let isAdmin = false;
     if (!user) {
       user = await Admin.findById(decoded.id).select('-password');
+      isAdmin = !!user;
     }
 
     // If no user or admin found or token doesn't match, return unauthorized error
@@ -34,6 +36,9 @@ const protect = async (req, res, next) => {
 
     // Attach the user/admin to the request object
     req.user = user;
+    // protect() accepts a contestant's token just as readily as an admin's, so
+    // which collection it came from is what the admin-only routes go on.
+    req.isAdmin = isAdmin;
     next();
   } catch (error) {
     console.error('Token verification failed:', error.message);
@@ -41,4 +46,14 @@ const protect = async (req, res, next) => {
   }
 };
 
-module.exports = { protect };
+// Runs after protect(). Starting and stopping a contest or its voting is the
+// admin's call, and a logged-in contestant holds a token that protect() alone
+// is happy with.
+const requireAdmin = (req, res, next) => {
+  if (!req.isAdmin) {
+    return res.status(403).json({ message: 'Not authorized, admin only' });
+  }
+  next();
+};
+
+module.exports = { protect, requireAdmin };

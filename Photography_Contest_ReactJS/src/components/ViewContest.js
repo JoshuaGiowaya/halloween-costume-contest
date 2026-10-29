@@ -8,6 +8,7 @@ import { UserAuthContext } from '../context/UserAuthContext';
 import { AdminAuthContext } from '../context/AdminAuthContext';
 import { prepareImage, validateFile, MAX_UPLOAD_MB } from '../utils/prepareImage';
 import { serverMessage } from '../utils/serverMessage';
+import backgroundClient, { backgroundConfig, POLL_INTERVAL_MS } from '../utils/backgroundClient';
 
 // Axios configuration with interceptors
 let spinnerCounter = 0;
@@ -149,6 +150,27 @@ const ViewContests = () => {
                 });
         }
     }, [loggedInUser]);
+
+    // The admin starts a contest and opens voting while this list is on screen,
+    // and both change what the cards should say and offer. Re-read them on a
+    // timer through backgroundClient, which skips the full-screen spinner the
+    // interceptors above put up for ordinary calls.
+    useEffect(() => {
+        const refreshContests = async () => {
+            try {
+                const { data } = await backgroundClient.get(
+                    `${process.env.REACT_APP_API_URL}/api/contests/fetch`,
+                    backgroundConfig
+                );
+                setContests(data);
+            } catch (error) {
+                console.error('Could not refresh the contest list:', error);
+            }
+        };
+
+        const timer = setInterval(refreshContests, POLL_INTERVAL_MS);
+        return () => clearInterval(timer);
+    }, []);
 
     const today = new Date();
 
