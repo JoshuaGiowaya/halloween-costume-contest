@@ -116,12 +116,15 @@ img {
   overflow: hidden;
 }
 
-/* Keeps a grid of user uploads tidy: every thumbnail is the same square-ish
-   box regardless of whether the photo is portrait, landscape or panoramic. */
+/* Every thumbnail is the same square box regardless of whether the photo is
+   portrait, landscape or panoramic. `contain` fits the whole photo inside that
+   square and letterboxes the rest, rather than filling the square by cutting
+   the photo down to it - a full-body costume shot from a phone is tall enough
+   that cropping to fill took the head or the feet off. */
 .photo-thumb {
   width: 100%;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
   background-color: #f1f3f5;
 }
 
