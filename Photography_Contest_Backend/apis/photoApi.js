@@ -1,5 +1,6 @@
 const { validationResult } = require('express-validator');
 const Photo = require('../models/Photo');
+const { deleteImageByUrl } = require('./photoImageApi');
 
 // Create a new photo
 const createPhoto = async (req, res) => {
@@ -66,12 +67,23 @@ const updatePhoto = async (req, res) => {
     }
 
     try {
+        // Read before the write so a replaced photo can be cleaned up after.
+        const existing = await Photo.findOne({ contest_title, email });
+        const previousUrl = existing && existing.photo_url;
+
         const updatedPhoto = await Photo.findOneAndUpdate(
             { contest_title, email },
             changes,
             { new: true }
         );
         if (updatedPhoto) {
+            // The replaced photo belongs to nobody now. The entry already
+            // points at the new one, so a failure here leaves the contest
+            // correct and the database slightly fuller - deleteImageByUrl
+            // swallows it rather than failing the edit.
+            if (changes.photo_url && previousUrl && previousUrl !== changes.photo_url) {
+                await deleteImageByUrl(previousUrl);
+            }
             console.log('Photo Updated', updatedPhoto);
             res.status(200).json({ update: 'success', updatedPhoto });
         } else {
@@ -100,6 +112,7 @@ const deletePhoto = async (req, res) => {
     try {
         const deletedPhoto = await Photo.findOneAndDelete({ contest_title, email });
         if (deletedPhoto) {
+            await deleteImageByUrl(deletedPhoto.photo_url);
             console.log('Photo Deleted:', deletedPhoto);
             res.status(200).json({ delete: 'success' });
         } else {
@@ -117,8 +130,13 @@ const deletePhotosByContestTitle = async (req, res) => {
     const { contest_title } = req.body;
 
     try {
+        // Collected before the entries go, since the URL is the only handle on
+        // the stored bytes.
+        const doomed = await Photo.find({ contest_title }).select('photo_url');
+
         const deletedPhotos = await Photo.deleteMany({ contest_title });
         if (deletedPhotos.deletedCount > 0) {
+            await Promise.all(doomed.map(photo => deleteImageByUrl(photo.photo_url)));
             console.log(`${deletedPhotos.deletedCount} photos deleted for contest title: ${contest_title}`);
             res.status(200).json({ delete: 'success', deletedCount: deletedPhotos.deletedCount });
         } else {

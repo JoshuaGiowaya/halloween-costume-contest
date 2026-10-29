@@ -1,6 +1,12 @@
 const { check } = require('express-validator');
 const allowlist = require('../utils/allowlist');
 
+// Photos are served from this API now rather than from imgbb, so a photo_url
+// is whatever host the backend is reachable at. isURL() insists on a top-level
+// domain by default, which rejects http://localhost:8080/... and makes every
+// submission fail on a development machine.
+const PHOTO_URL_OPTIONS = { require_tld: false };
+
 // User Validators
 const validateRegister = (req, res, next) => {
   const fixedPasswordMode = !!process.env.FIXED_USER_PASSWORD;
@@ -153,7 +159,7 @@ const validatePhotoCreate = [
     .optional({ nullable: true })
     .trim()
     .isLength({ max: 500 }),
-  check('photo_url', 'Photo URL is required').isURL().withMessage('Photo URL must be a valid URL'),
+  check('photo_url', 'Photo URL is required').isURL(PHOTO_URL_OPTIONS).withMessage('Photo URL must be a valid URL'),
 ];
 
 // An edit can change any part of the entry, so everything but the keys that
@@ -171,7 +177,7 @@ const validatePhotoUpdate = [
     .optional({ nullable: true })
     .trim()
     .isLength({ max: 500 }),
-  check('photo_url', 'Photo URL must be a valid URL').optional().isURL(),
+  check('photo_url', 'Photo URL must be a valid URL').optional().isURL(PHOTO_URL_OPTIONS),
 ];
 
 const validatePhotoDelete = [
@@ -185,13 +191,13 @@ const validateDeletePhotosByContestTitle = [
 
 // Vote Validators
 const validateVoteCreate = [
-  check('photo_url', 'Photo URL is required').isURL().withMessage('Photo URL must be a valid URL'),
+  check('photo_url', 'Photo URL is required').isURL(PHOTO_URL_OPTIONS).withMessage('Photo URL must be a valid URL'),
   check('email', 'Email is required').isEmail().withMessage('Please provide a valid email'),
   check('contest_title', 'Contest title is required').not().isEmpty(),
 ];
 
 const validateVoteUpdate = [
-  check('photo_url', 'Photo URL is required').isURL().withMessage('Photo URL must be a valid URL'),
+  check('photo_url', 'Photo URL is required').isURL(PHOTO_URL_OPTIONS).withMessage('Photo URL must be a valid URL'),
   check('email', 'Email is required').isEmail().withMessage('Please provide a valid email'),
   check('contest_title', 'Contest title is required').not().isEmpty(),
 ];
@@ -202,7 +208,7 @@ const validateVoteDelete = [
 ];
 
 const validateDeleteVotesByPhotoURL = [
-  check('photo_url', 'Photo URL is required').isURL().withMessage('Photo URL must be a valid URL'),
+  check('photo_url', 'Photo URL is required').isURL(PHOTO_URL_OPTIONS).withMessage('Photo URL must be a valid URL'),
 ];
 
 module.exports = {

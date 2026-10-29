@@ -76,4 +76,4 @@ See [ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md) for complete configurat
 The application consists of:
 - **Backend**: Node.js/Express API with MongoDB
 - **Frontend**: React.js with Bootstrap styling
-- **File Storage**: ImgBB integration for photo hosting
+- **File Storage**: photos are stored in MongoDB and served by the API itself

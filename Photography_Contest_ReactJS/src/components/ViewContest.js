@@ -7,7 +7,7 @@ import PastContestPhotos from './PastContestPhotos';
 import { UserAuthContext } from '../context/UserAuthContext';
 import { AdminAuthContext } from '../context/AdminAuthContext';
 import { prepareImage, validateFile, MAX_UPLOAD_MB } from '../utils/prepareImage';
-import { serverMessage, uploadMessage } from '../utils/serverMessage';
+import { serverMessage } from '../utils/serverMessage';
 
 // Axios configuration with interceptors
 let spinnerCounter = 0;
@@ -333,29 +333,37 @@ const ViewContests = () => {
         try {
             let imgUrl = null;
             if (upload) {
-                const formData = new FormData();
-                formData.append('image', upload);
-                formData.append('key', '10fc3bdb39131e1d5f242cbb5d183090'); // Replace with your imgbb API key
-
-                // Handled separately from the save below: a failure here is the
-                // photo host, not this contest's API, and saying so is the
-                // difference between a contestant waiting a few minutes and one
-                // re-shooting a costume photo that was never the problem.
-                let imgbbResponse;
+                // The photo goes to our own API, which keeps the bytes in Mongo
+                // alongside the entry and answers with the URL they will be
+                // served from. It used to go to imgbb, whose outage on 29 Oct
+                // took down submissions for a contest that was otherwise fine.
+                //
+                // Still handled separately from the save below, so a photo that
+                // fails to store is reported as that rather than as a rejected
+                // entry.
+                let uploadResponse;
                 try {
-                    imgbbResponse = await axios.post('https://api.imgbb.com/1/upload', formData);
+                    uploadResponse = await axios.post(
+                        `${process.env.REACT_APP_API_URL}/api/photos/image`,
+                        upload,
+                        {
+                            headers: {
+                                'Content-Type': 'image/jpeg',
+                                'x-api-key': process.env.REACT_APP_API_KEY,
+                            },
+                            withCredentials: true,
+                        }
+                    );
                 } catch (error) {
-                    console.error('The photo service rejected the upload!', error);
-                    setSubmitError(uploadMessage(error));
+                    console.error('There was an error uploading the photo!', error);
+                    setSubmitError(serverMessage(error, 'We could not upload your photo. Please check your connection and try again.'));
                     return;
                 }
 
-                imgUrl = imgbbResponse.data
-                    && imgbbResponse.data.data
-                    && imgbbResponse.data.data.url;
+                imgUrl = uploadResponse.data && uploadResponse.data.url;
 
                 if (!imgUrl) {
-                    setSubmitError('The photo service did not accept that image. Please try another photo.');
+                    setSubmitError('Your photo did not save correctly. Please try again.');
                     return;
                 }
             }
